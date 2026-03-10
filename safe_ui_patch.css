@@ -1,0 +1,36 @@
+
+/* تحسين السلاسة على الحاسوب والهاتف */
+html,body{height:100%}
+body{overflow:auto}
+#appLayout{min-height:100vh}
+.main-content{min-width:0}
+.tab-container,.card,.table-wrap{max-width:100%}
+.table-wrap{overflow:auto}
+canvas{max-width:100%}
+
+/* عناصر محذوفة بطلب المستخدم */
+#btn-sessions,#btn-equity,#btn-biography,#btn-parent-report,#btn-hypothesis,
+#tab-sessions,#tab-equity,#tab-biography,#tab-parent-report,#tab-hypothesis{display:none!important}
+
+/* تحسين العجلة */
+.wheel-full-btn{margin-inline-start:8px}
+.wheel-fullscreen{position:fixed!important;inset:0!important;z-index:100000!important;background:#0b1020!important;padding:20px!important;border-radius:0!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:auto!important}
+.wheel-fullscreen .card,.wheel-fullscreen .timer-box{background:transparent!important;border-color:rgba(255,255,255,.15)!important}
+.wheel-fullscreen canvas#wheelCanvas{width:min(78vmin,860px)!important;height:min(78vmin,860px)!important;max-width:78vmin!important;max-height:78vmin!important}
+#wheelExitFullscreenBtn{display:none;position:fixed;top:16px;left:16px;z-index:100001;background:#dc2626;color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+body.wheel-is-fullscreen #wheelExitFullscreenBtn{display:block}
+
+/* الطباعة */
+@media print{
+  body{background:#fff!important;overflow:visible!important}
+  .sidebar,.app-header,.mobile-overlay,.no-print,.btn,button,input,select,textarea{display:none!important}
+  .main-content,.tab-container,.card{margin:0!important;padding:0!important;box-shadow:none!important;border:none!important;background:#fff!important}
+  .tab-content{display:block!important}
+}
+
+@media (max-width:900px){
+  .app-header{padding:10px 12px}
+  .page-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .card{padding:12px}
+  table{min-width:720px}
+}
