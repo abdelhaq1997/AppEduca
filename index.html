@@ -13,7 +13,212 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+/* ===== MOBILE FIX ===== */
+@media (max-width:768px){
+  body{
+    overflow:auto !important;
+    height:auto !important;
+  }
 
+  .app-layout{
+    flex-direction:column;
+    height:auto !important;
+    min-height:100dvh;
+  }
+
+  .sidebar{
+    position:fixed !important;
+    top:0;
+    right:-260px;
+    height:100dvh;
+    z-index:1000;
+    transition:.3s;
+  }
+
+  .sidebar.active{
+    right:0 !important;
+    transform:none !important;
+  }
+
+  .main-content{
+    width:100% !important;
+    min-width:0;
+  }
+
+  .tab-container{
+    padding:12px !important;
+    overflow-y:auto !important;
+  }
+
+  .app-header{
+    flex-wrap:wrap;
+    gap:8px;
+    height:auto !important;
+    padding:10px 12px !important;
+  }
+
+  .header-title{
+    width:100%;
+    font-size:15px !important;
+  }
+
+  .global-search{
+    width:100% !important;
+    flex:1 1 100% !important;
+  }
+
+  .global-search input{
+    width:100% !important;
+  }
+
+  .ctrl-group{
+    flex:1 1 calc(50% - 6px);
+    min-width:140px;
+  }
+
+  .card{
+    margin-bottom:12px;
+  }
+
+  .card-body{
+    padding:12px !important;
+  }
+
+  .dash-grid,
+  .g2,
+  .g3,
+  .intervention-grid,
+  .groups-container{
+    grid-template-columns:1fr !important;
+  }
+
+  table{
+    font-size:12px !important;
+    min-width:650px;
+  }
+
+  .btn{
+    padding:10px 12px !important;
+    font-size:13px !important;
+  }
+
+  .modal{
+    width:100% !important;
+    max-width:100% !important;
+    max-height:100dvh !important;
+    border-radius:14px !important;
+  }
+
+  .modal-body{
+    padding:14px !important;
+  }
+}
+
+/* ===== WHEEL FULLSCREEN ===== */
+#wheelOverlay{
+  position:fixed;
+  inset:0;
+  background:#0f172a;
+  z-index:99999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:20px;
+}
+
+#wheelOverlay.active{
+  display:flex;
+}
+
+#wheelCanvas{
+  width:min(92vmin, 820px);
+  height:min(92vmin, 820px);
+  max-width:92vmin;
+  max-height:92vmin;
+  background:transparent;
+}
+
+#wheelClose{
+  position:absolute;
+  top:16px;
+  left:16px;
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:900;
+  z-index:2;
+}
+
+#wheelFullscreenBtn{
+  background:#4f46e5;
+  color:#fff;
+  border:none;
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:900;
+}
+
+/* ===== PRINT FIX ===== */
+@media print{
+  body{
+    background:#fff !important;
+    overflow:visible !important;
+    height:auto !important;
+  }
+
+  .sidebar,
+  .app-header,
+  .mobile-overlay,
+  .no-print,
+  #ai-fab,
+  #ai-chat-panel,
+  #toastContainer,
+  #wheelOverlay{
+    display:none !important;
+  }
+
+  .main-content,
+  .tab-container{
+    width:100% !important;
+    margin:0 !important;
+    padding:0 !important;
+    overflow:visible !important;
+  }
+
+  .tab-content{
+    display:block !important;
+  }
+
+  .card{
+    page-break-inside:avoid;
+    break-inside:avoid;
+    box-shadow:none !important;
+    border:1px solid #ddd !important;
+  }
+
+  table{
+    width:100% !important;
+    min-width:0 !important;
+    font-size:12px !important;
+    border-collapse:collapse !important;
+  }
+
+  th,td{
+    border:1px solid #ccc !important;
+    padding:6px !important;
+  }
+
+  canvas{
+    max-width:100% !important;
+    height:auto !important;
+    page-break-inside:avoid;
+  }
+}
 <style>
 /* ═══ ROOT VARIABLES ═══ */
 :root {
@@ -5557,5 +5762,84 @@ document.getElementById('installApp').addEventListener('click', async () => {
 });
 </script>
   <script src="./pwa.js"></script>
+  <div id="wheelOverlay" class="no-print">
+  <button id="wheelClose" type="button">خروج</button>
+  <canvas id="wheelCanvas" width="900" height="900"></canvas>
+</div>
+  <script>
+function openWheelFullScreen() {
+  const overlay = document.getElementById("wheelOverlay");
+  if (!overlay) return;
+  overlay.classList.add("active");
+
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function closeWheelFullScreen() {
+  const overlay = document.getElementById("wheelOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("active");
+
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const closeBtn = document.getElementById("wheelClose");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeWheelFullScreen);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeWheelFullScreen();
+  });
+
+  const wheelArea =
+    document.querySelector("#tab-tools .card-header") ||
+    document.querySelector("#tab-tools");
+
+  if (wheelArea && !document.getElementById("wheelFullscreenBtn")) {
+    const btn = document.createElement("button");
+    btn.id = "wheelFullscreenBtn";
+    btn.type = "button";
+    btn.textContent = "ملء الشاشة";
+    btn.className = "btn btn-primary btn-sm";
+    btn.addEventListener("click", openWheelFullScreen);
+    wheelArea.appendChild(btn);
+  }
+});
+
+function printSectionById(id) {
+  const area = document.getElementById(id);
+  if (!area) return;
+
+  const win = window.open("", "_blank", "width=1000,height=800");
+  if (!win) return;
+
+  win.document.write(`
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <title>طباعة</title>
+      <style>
+        body{font-family:Tajawal,Arial,sans-serif;padding:20px;direction:rtl}
+        table{width:100%;border-collapse:collapse}
+        th,td{border:1px solid #ccc;padding:6px;text-align:right}
+        .card{border:none;box-shadow:none}
+        canvas{max-width:100%}
+      </style>
+    </head>
+    <body>${area.innerHTML}</body>
+    </html>
+  `);
+
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 400);
+}
+</script>
 </body>
 </html>
