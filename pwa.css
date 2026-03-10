@@ -1,3 +1,16 @@
-
-#installPwaBtn{position:fixed;left:16px;bottom:16px;z-index:99999;display:none;background:#1e40af;color:#fff;border:none;border-radius:14px;padding:12px 16px;font:700 14px Tahoma,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.2);cursor:pointer}
-body.offline::before{content:"أنت تعمل الآن بدون إنترنت";position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:99999;background:#7c2d12;color:#fff;padding:7px 12px;border-radius:999px;font:700 12px Tahoma,sans-serif}
+#installPwaBtn:hover {
+  opacity: 0.95;
+}
+body.offline::before {
+  content: "أنت الآن بدون إنترنت";
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 99999;
+  background: #b91c1c;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
