@@ -5155,6 +5155,8 @@ function buildPrintHeader(title, teacher, school, year, level) {
 
 async function printSection(section) {
   const year = State.year, level = State.level;
+  const gradesKey = `${year}_grades_L${level}`;
+  const currentGrades = await DB.get(gradesKey) || {};
   const teacher = await Store.get('setting_teacher', 'ذ. عبد الحق جعايط');
   const school = await Store.get('setting_school', 'م/م المصامدة');
   const titleMap = { fluency:'سجل الطلاقة القرائية', attendance:'تتبع الحضور والغياب', homework:'الواجبات المنزلية', grades:'الفروض والتقييم', library:'مكتبة القسم', reports:'تقارير المتعلمين', notes:'الملاحظات التربوية', sessions:'سجل الحصص' };
