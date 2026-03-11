@@ -5843,6 +5843,32 @@ function printSectionById(id) {
   win.focus();
   setTimeout(() => win.print(), 400);
 }
+    /* ===== حساب التحفيز من الفروض والأنشطة ===== */
+
+Engine.calculateXP = async function(name){
+
+ const avg = await Engine.generalAvg(name, State.level, State.year) || 0;
+
+ let gradeXP = 0;
+
+ if(avg >= 9) gradeXP = 50;
+ else if(avg >= 8) gradeXP = 40;
+ else if(avg >= 7) gradeXP = 30;
+ else if(avg >= 6) gradeXP = 20;
+ else gradeXP = 10;
+
+ const acts = await DB.get('activities');
+ const a = acts[name] || {projects:0,environment:0,research:0,initiatives:0};
+
+ const activityXP =
+ (a.projects||0)*10 +
+ (a.environment||0)*5 +
+ (a.research||0)*8 +
+ (a.initiatives||0)*6;
+
+ return gradeXP + activityXP;
+
+}
 </script>
 </body>
 </html>
