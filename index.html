@@ -344,6 +344,7 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text-1);f
 .nav-item.active::before{content:'';position:absolute;right:0;top:25%;bottom:25%;width:3px;background:var(--brand-400);border-radius:3px}
 .nav-icon{width:28px;height:28px;flex-shrink:0;background:rgba(255,255,255,.06);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .nav-item.active .nav-icon{background:rgba(99,102,241,.3)}
+  <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class"><span class="nav-icon">🎯</span> حصة اليوم</button>
 .nav-badge{margin-right:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:99px}
 
 /* ─── MAIN ─── */
@@ -1476,8 +1477,9 @@ onclick="createAutoWeeklyBackup().then(renderAutoBackupsList)">
             <div class="empty-state"><div class="empty-icon">🎯</div><p>اضغط "تحليل الآن" لعرض مرآتك التربوية</p></div>
           </div>
         </div>
-      </section>
-
+        <section id="tab-today-class" class="tab-content">
+  <div id="todayClassContainer"></div>
+</section>
       <!-- ══ 20. سيرة المتعلم التراكمية ══ -->
       <section id="tab-biography" class="tab-content">
         <div class="g2" style="align-items:flex-start">
@@ -5049,7 +5051,7 @@ const TAB_TITLES = {
   tools:'أدوات القسم', library:'مكتبة القسم', sessions:'سجل الحصص', journal:'المذكرة التربوية',
   'class-analysis':'📈 تحليل القسم', 'parent-report':'👨‍👩‍👧 تقرير ولي الأمر',
   reports:'تقارير المتعلمين', 'report-editor':'محرر التقارير', settings:'الإعدادات',
-  hypothesis:'🧪 مختبر الفرضيات التربوية', equity:'🎯 مؤشر العدالة التعليمية', biography:'📖 سيرة المتعلم التراكمية'
+  hypothesis:'🧪 مختبر الفرضيات التربوية', equity:'🎯 مؤشر العدالة التعليمية', biography:'📖 سيرة المتعلم التراكمية' 'today-class':'🎯 حصة اليوم',
 };
 
 async function switchTab(tabId) {
@@ -5067,6 +5069,7 @@ async function switchTab(tabId) {
   document.getElementById('mobileOverlay').classList.remove('active');
   
   await refreshCurrentTab(tabId);
+  case 'today-class': await UI.renderTodayClass(); break;
 }
 
 async function refreshCurrentTab(tabId) {
@@ -6020,6 +6023,370 @@ async function createAutoWeeklyBackup() {
  await renderAutoBackupsList();
 
 });
+  // ===== SMART SUPPORT INDEX =====
+Engine.getSmartSupportIndex = async function(name) {
+  const r = await Engine.calculatePI(name, State.level);
+  let score = 100;
+
+  score -= Math.max(0, (5 - (r.raw.gAvg || 5)) * 12);
+  score -= Math.min(30, (r.raw.absCount || 0) * 5);
+  score -= Math.min(20, (r.raw.hwMisses || 0) * 4);
+  score -= Math.max(0, (5 - (r.raw.fluAvg || 0)) * 6);
+
+  const allNotes = await DB.get('notes');
+  const negNotes = (allNotes || []).filter(n =>
+    n.student === name && (n.type === 'behavior' || n.type === 'academic')
+  ).length;
+  score -= Math.min(20, negNotes * 3);
+
+  score = Math.max(0, Math.min(100, score));
+
+  let label = 'مستقر';
+  let color = 'var(--success)';
+  if (score < 70) { label = 'يحتاج متابعة'; color = 'var(--warning)'; }
+  if (score < 45) { label = 'يحتاج دعماً عاجلاً'; color = 'var(--danger)'; }
+
+  return { score, label, color, pi: r.pi, raw: r.raw };
+};
+
+
+// ===== PROGRESS TRACKER =====
+Engine.getStudentTrend = async function(name) {
+  const grades = await DB.get('grades');
+  const values = [];
+
+  Object.keys(grades || {}).forEach(subj => {
+    const g = ((grades[subj] || {})[name]) || {};
+    Object.keys(g).forEach(k => {
+      const v = parseFloat(g[k]);
+      if (!isNaN(v)) values.push(v);
+    });
+  });
+
+  const last3 = values.slice(-3);
+  if (!last3.length) {
+    return { trend: '—', delta: 0, label: 'لا توجد بيانات', color: 'var(--text-3)' };
+  }
+
+  const first = last3[0];
+  const last = last3[last3.length - 1];
+  const delta = +(last - first).toFixed(2);
+
+  if (delta > 0.5) return { trend: 'صاعد', delta, label: `↗ +${delta}`, color: 'var(--success)' };
+  if (delta < -0.5) return { trend: 'متراجع', delta, label: `↘ ${delta}`, color: 'var(--danger)' };
+  return { trend: 'مستقر', delta, label: '→ مستقر', color: 'var(--warning)' };
+};
+
+
+// ===== MORNING DECISION BOARD =====
+UI.renderMorningDecisionBoard = async function() {
+  const pupils = PupilMgr.getPupilNames();
+  const rows = [];
+
+  for (const p of pupils) {
+    const support = await Engine.getSmartSupportIndex(p);
+    const trend = await Engine.getStudentTrend(p);
+    const perf = await Engine.calculatePI(p, State.level);
+    rows.push({ name: p, support, trend, perf });
+  }
+
+  const urgent = [...rows]
+    .sort((a, b) => a.support.score - b.support.score)
+    .slice(0, 3);
+
+  const motiv = [...rows]
+    .sort((a, b) => (b.trend.delta + b.perf.pi) - (a.trend.delta + a.perf.pi))
+    .slice(0, 3);
+
+  const att = await DB.get('attendance');
+  const allDates = Object.keys(att || {}).sort().slice(-7);
+  let absCount = 0;
+  allDates.forEach(d => {
+    Object.values(att[d] || {}).forEach(v => {
+      const st = typeof v === 'object' ? v?.status : v;
+      if (st === 'absent') absCount++;
+    });
+  });
+
+  const grades = await DB.get('grades');
+  const subjMap = {
+    arabic:'العربية',
+    islamic:'الإسلامية',
+    social:'الاجتماعيات',
+    art:'الفنية',
+    pe:'البدنية'
+  };
+
+  let weakestSubj = '—';
+  let weakestAvg = 10;
+
+  Object.keys(subjMap).forEach(subj => {
+    let sum = 0, cnt = 0;
+    const subjData = grades[subj] || {};
+    Object.values(subjData).forEach(st => {
+      Object.values(st || {}).forEach(v => {
+        const n = parseFloat(v);
+        if (!isNaN(n)) { sum += n; cnt++; }
+      });
+    });
+    if (cnt) {
+      const avg = sum / cnt;
+      if (avg < weakestAvg) {
+        weakestAvg = avg;
+        weakestSubj = subjMap[subj];
+      }
+    }
+  });
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><div class="icon">🌅</div>لوحة القرار الصباحية</div>
+      </div>
+      <div class="card-body">
+        <div class="g3">
+          <div class="card" style="margin-bottom:0">
+            <div class="card-header"><div class="card-title">تدخل اليوم</div></div>
+            <div class="card-body">
+              ${urgent.map(x => `
+                <div class="note-item academic" style="margin-bottom:8px">
+                  <div class="note-meta"><span>${x.name}</span><span style="color:${x.support.color};font-weight:900">${x.support.label}</span></div>
+                  <div class="note-text">PI: ${x.perf.pi.toFixed(1)} · ${x.trend.label}</div>
+                </div>
+              `).join('') || '<div class="text-muted">لا يوجد</div>'}
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:0">
+            <div class="card-header"><div class="card-title">تحفيز اليوم</div></div>
+            <div class="card-body">
+              ${motiv.map(x => `
+                <div class="note-item positive" style="margin-bottom:8px">
+                  <div class="note-meta"><span>${x.name}</span><span>${x.trend.label}</span></div>
+                  <div class="note-text">PI: ${x.perf.pi.toFixed(1)} · XP: ${x.perf.xp.toFixed(0)}</div>
+                </div>
+              `).join('') || '<div class="text-muted">لا يوجد</div>'}
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:0">
+            <div class="card-header"><div class="card-title">ملخص سريع</div></div>
+            <div class="card-body">
+              <div class="note-item"><div class="note-meta"><span>الغياب آخر 7 أيام</span></div><div class="note-text">${absCount}</div></div>
+              <div class="note-item"><div class="note-meta"><span>أضعف مادة</span></div><div class="note-text">${weakestSubj}${weakestAvg < 10 ? ` · ${weakestAvg.toFixed(2)}/10` : ''}</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+
+// ===== WEEKLY REPORT =====
+UI.generateWeeklyClassReport = async function() {
+  const pupils = PupilMgr.getPupilNames();
+  const rows = [];
+
+  for (const p of pupils) {
+    const perf = await Engine.calculatePI(p, State.level);
+    const support = await Engine.getSmartSupportIndex(p);
+    const trend = await Engine.getStudentTrend(p);
+    rows.push({ name: p, perf, support, trend });
+  }
+
+  const improving = rows.filter(x => x.trend.delta > 0.5).length;
+  const struggling = rows.filter(x => x.support.score < 45).length;
+
+  const att = await DB.get('attendance');
+  const last7 = Object.keys(att || {}).sort().slice(-7);
+  let abs = 0;
+  last7.forEach(d => {
+    Object.values(att[d] || {}).forEach(v => {
+      const st = typeof v === 'object' ? v?.status : v;
+      if (st === 'absent') abs++;
+    });
+  });
+
+  const acts = await DB.get('activities');
+  let totalActs = 0;
+  Object.values(acts || {}).forEach(a => {
+    totalActs += (a.projects || 0) + (a.environment || 0) + (a.research || 0) + (a.initiatives || 0);
+  });
+
+  const avgPI = rows.length ? (rows.reduce((s, x) => s + x.perf.pi, 0) / rows.length) : 0;
+  const avgGrades = rows.length ? (rows.reduce((s, x) => s + (x.perf.raw.gAvg || 0), 0) / rows.length) : 0;
+
+  const html = `
+    <div style="direction:rtl;padding:20px;font-family:Tajawal,Arial,sans-serif">
+      <h2 style="margin-bottom:14px">التقرير الأسبوعي الآلي للقسم</h2>
+      <p><strong>التاريخ:</strong> ${State.today}</p>
+      <p><strong>متوسط PI:</strong> ${avgPI.toFixed(2)}</p>
+      <p><strong>متوسط الفروض:</strong> ${avgGrades.toFixed(2)}/10</p>
+      <p><strong>المتعلمون المتحسنون:</strong> ${improving}</p>
+      <p><strong>المتعلمون المتعثرون:</strong> ${struggling}</p>
+      <p><strong>الغيابات آخر 7 أيام:</strong> ${abs}</p>
+      <p><strong>إجمالي الأنشطة المندمجة:</strong> ${totalActs}</p>
+
+      <h3 style="margin-top:18px">تفصيل المتعلمين</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr>
+            <th style="border:1px solid #ccc;padding:6px">الاسم</th>
+            <th style="border:1px solid #ccc;padding:6px">PI</th>
+            <th style="border:1px solid #ccc;padding:6px">معدل الفروض</th>
+            <th style="border:1px solid #ccc;padding:6px">مؤشر الدعم</th>
+            <th style="border:1px solid #ccc;padding:6px">التحسن</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(x => `
+            <tr>
+              <td style="border:1px solid #ccc;padding:6px">${x.name}</td>
+              <td style="border:1px solid #ccc;padding:6px">${x.perf.pi.toFixed(2)}</td>
+              <td style="border:1px solid #ccc;padding:6px">${(x.perf.raw.gAvg || 0).toFixed(2)}</td>
+              <td style="border:1px solid #ccc;padding:6px">${x.support.label} (${x.support.score.toFixed(0)})</td>
+              <td style="border:1px solid #ccc;padding:6px">${x.trend.label}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <p style="margin-top:18px"><strong>توصية أسبوعية:</strong> ${struggling > 0 ? 'التركيز على المتعلمين ذوي مؤشر الدعم المنخفض مع دعم موجّه في المهارات الأساسية.' : 'الاستمرار مع تعزيز المتحسنين وتوسيع الأنشطة المندمجة.'}</p>
+    </div>
+  `;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.print();
+};
+
+
+// ===== TODAY CLASS MODE =====
+UI.renderTodayClass = async function() {
+  const pupils = PupilMgr.getPupilNames();
+  const att = (await DB.get('attendance'))[State.today] || {};
+  const hw = (await DB.get('homework'))[State.today] || {};
+
+  const urgent = [];
+  for (const p of pupils) {
+    const support = await Engine.getSmartSupportIndex(p);
+    if (support.score < 45) urgent.push({ name: p, support });
+  }
+
+  const html = `
+    <div class="g2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><div class="icon">📅</div>حصة اليوم</div>
+          <button class="btn btn-primary btn-sm" onclick="UI.generateWeeklyClassReport()">🖨️ التقرير الأسبوعي</button>
+        </div>
+        <div class="card-body">
+          <div class="g3">
+            <div class="stat-box"><div class="stat-lbl">تاريخ اليوم</div><div class="stat-val" style="font-size:20px">${State.today}</div></div>
+            <div class="stat-box"><div class="stat-lbl">الحاضرون</div><div class="stat-val" style="font-size:20px">${pupils.filter(p => ((typeof att[p] === 'object' ? att[p]?.status : att[p]) !== 'absent')).length}</div></div>
+            <div class="stat-box"><div class="stat-lbl">الغياب</div><div class="stat-val" style="font-size:20px">${pupils.filter(p => ((typeof att[p] === 'object' ? att[p]?.status : att[p]) === 'absent')).length}</div></div>
+            <div class="stat-box"><div class="stat-lbl">واجبات منجزة</div><div class="stat-val" style="font-size:20px">${Object.values(hw).filter(v => v === 'done').length}</div></div>
+          </div>
+
+          <div class="card mt-12" style="margin-bottom:0">
+            <div class="card-header"><div class="card-title">تنبيه سريع</div></div>
+            <div class="card-body">
+              ${urgent.length ? urgent.map(x => `
+                <div class="note-item behavior">
+                  <div class="note-meta"><span>${x.name}</span><span style="color:${x.support.color}">${x.support.label}</span></div>
+                  <div class="note-text">مؤشر الدعم: ${x.support.score.toFixed(0)}</div>
+                </div>
+              `).join('') : '<div class="text-muted">لا توجد حالات حرجة اليوم</div>'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title"><div class="icon">⚡</div>إجراءات سريعة</div></div>
+        <div class="card-body">
+          <div class="flex-row">
+            <button class="btn btn-success" onclick="switchTab('attendance')">الحضور</button>
+            <button class="btn btn-warning" onclick="switchTab('homework')">الواجب</button>
+            <button class="btn btn-info" onclick="switchTab('activities')">الأنشطة</button>
+            <button class="btn btn-primary" onclick="switchTab('notes')">ملاحظة سريعة</button>
+            <button class="btn btn-ghost" onclick="switchTab('grades')">التقييم</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setHtml('todayClassContainer', html);
+};
+
+
+// ===== DASHBOARD OVERRIDE =====
+UI.renderDashboardBase = UI.renderDashboard;
+UI.renderDashboard = async function() {
+  await UI.renderDashboardBase();
+
+  const dashboardTab = document.getElementById('tab-dashboard');
+  if (!dashboardTab) return;
+
+  let board = document.getElementById('morningDecisionMount');
+  if (!board) {
+    board = document.createElement('div');
+    board.id = 'morningDecisionMount';
+    dashboardTab.prepend(board);
+  }
+
+  board.innerHTML = await UI.renderMorningDecisionBoard();
+
+  const pupils = PupilMgr.getPupilNames();
+  const rows = [];
+
+  for (const p of pupils) {
+    const support = await Engine.getSmartSupportIndex(p);
+    const trend = await Engine.getStudentTrend(p);
+    rows.push({ name: p, support, trend });
+  }
+
+  let smartWrap = document.getElementById('smartSupportMount');
+  if (!smartWrap) {
+    smartWrap = document.createElement('div');
+    smartWrap.id = 'smartSupportMount';
+    dashboardTab.appendChild(smartWrap);
+  }
+
+  smartWrap.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><div class="icon">🧠</div>مؤشر الدعم الذكي وتتبع التحسن</div>
+        <button class="btn btn-primary btn-sm" onclick="UI.generateWeeklyClassReport()">🖨️ التقرير الأسبوعي الآلي</button>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>الاسم</th>
+              <th class="td-center">مؤشر الدعم</th>
+              <th class="td-center">الحالة</th>
+              <th class="td-center">التحسن</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(x => `
+              <tr>
+                <td><strong style="cursor:pointer;color:var(--brand-600)" onclick="UI.openProfile('${x.name}')">${x.name}</strong></td>
+                <td class="td-center" style="font-weight:900;color:${x.support.color}">${x.support.score.toFixed(0)}</td>
+                <td class="td-center"><span class="badge" style="background:color-mix(in srgb, ${x.support.color} 12%, white);color:${x.support.color}">${x.support.label}</span></td>
+                <td class="td-center" style="font-weight:900;color:${x.trend.color}">${x.trend.label}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+};
 }
 </script>
 </body>
