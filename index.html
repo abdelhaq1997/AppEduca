@@ -848,12 +848,14 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <div id="syncStatus" style="font-size:10px;color:var(--success);font-weight:700;display:none"></div>
       <button class="btn btn-primary btn-sm no-print" onclick="printClassReportUI()">🖨️ تقرير</button>
     </header>
-<section id="tab-today-class" class="tab-content">
-  <div id="todayClassContainer"></div>
-</section>
     <div id="smartAlertsContainer" class="no-print"></div>
 
     <div class="tab-container" id="tabContainer">
+
+      <!-- ══ TODAY CLASS ══ -->
+      <section id="tab-today-class" class="tab-content">
+        <div id="todayClassContainer"></div>
+      </section>
 
       <!-- ══ 1. DASHBOARD ══ -->
       <section id="tab-dashboard" class="tab-content active">
@@ -1480,9 +1482,8 @@ onclick="createAutoWeeklyBackup().then(renderAutoBackupsList)">
             <div class="empty-state"><div class="empty-icon">🎯</div><p>اضغط "تحليل الآن" لعرض مرآتك التربوية</p></div>
           </div>
         </div>
-        <section id="tab-today-class" class="tab-content">
-  <div id="todayClassContainer"></div>
-</section>
+      </section>
+
       <!-- ══ 20. سيرة المتعلم التراكمية ══ -->
       <section id="tab-biography" class="tab-content">
         <div class="g2" style="align-items:flex-start">
@@ -5154,8 +5155,7 @@ function buildPrintHeader(title, teacher, school, year, level) {
 }
 
 async function printSection(section) {
-const gradesKey = `${year}_grades_L${level}`;
-    const currentGrades = await DB.get(gradesKey) || {};
+  const year = State.year, level = State.level;
   const teacher = await Store.get('setting_teacher', 'ذ. عبد الحق جعايط');
   const school = await Store.get('setting_school', 'م/م المصامدة');
   const titleMap = { fluency:'سجل الطلاقة القرائية', attendance:'تتبع الحضور والغياب', homework:'الواجبات المنزلية', grades:'الفروض والتقييم', library:'مكتبة القسم', reports:'تقارير المتعلمين', notes:'الملاحظات التربوية', sessions:'سجل الحصص' };
@@ -5978,21 +5978,22 @@ async function createAutoWeeklyBackup() {
   const trimmed = backups.slice(0, 12);
   await DB.set('auto_backups', trimmed);
   await DB.set('backup_meta', { lastAutoBackup: now.toISOString() });
-  async function exportAutoBackup(index = 0) {
 }
- const backups = await DB.get('auto_backups') || [];
- const backup = backups[index];
- if (!backup) return;
 
- const blob = new Blob(
-  [JSON.stringify(backup,null,2)],
-  {type:"application/json"}
- );
+async function exportAutoBackup(index = 0) {
+  const backups = await DB.get('auto_backups') || [];
+  const backup = backups[index];
+  if (!backup) return;
 
- const a = document.createElement("a");
- a.href = URL.createObjectURL(blob);
- a.download = backup.fileName;
- a.click();
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: "application/json" }
+  );
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = backup.fileName;
+  a.click();
 }
   async function renderAutoBackupsList(){
 
