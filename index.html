@@ -803,9 +803,6 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class">
 <span class="nav-icon">🎯</span> حصة اليوم
 </button>
-      <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class">
-<span class="nav-icon">🎯</span> حصة اليوم
-</button>
       <span class="nav-section-label">الإدارة</span>
       <button class="nav-item" onclick="switchTab('class-analysis')" id="btn-class-analysis"><span class="nav-icon">📈</span> تحليل القسم</button>
       <button class="nav-item" onclick="switchTab('parent-report')" id="btn-parent-report"><span class="nav-icon">👨‍👩‍👧</span> تقرير ولي الأمر</button>
@@ -851,7 +848,9 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <div id="syncStatus" style="font-size:10px;color:var(--success);font-weight:700;display:none"></div>
       <button class="btn btn-primary btn-sm no-print" onclick="printClassReportUI()">🖨️ تقرير</button>
     </header>
-
+<section id="tab-today-class" class="tab-content">
+  <div id="todayClassContainer"></div>
+</section>
     <div id="smartAlertsContainer" class="no-print"></div>
 
     <div class="tab-container" id="tabContainer">
@@ -5941,7 +5940,6 @@ async function importBackup(file){
  await DB.set('notes',data.notes || {});
 
  location.reload();
-}
 }
     // ===== AUTO WEEKLY BACKUP =====
 async function createAutoWeeklyBackup() {
