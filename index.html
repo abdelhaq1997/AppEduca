@@ -344,7 +344,6 @@ body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text-1);f
 .nav-item.active::before{content:'';position:absolute;right:0;top:25%;bottom:25%;width:3px;background:var(--brand-400);border-radius:3px}
 .nav-icon{width:28px;height:28px;flex-shrink:0;background:rgba(255,255,255,.06);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .nav-item.active .nav-icon{background:rgba(99,102,241,.3)}
-  <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class"><span class="nav-icon">🎯</span> حصة اليوم</button>
 .nav-badge{margin-right:auto;background:var(--danger);color:#fff;font-size:9px;font-weight:900;padding:2px 6px;border-radius:99px}
 
 /* ─── MAIN ─── */
@@ -743,7 +742,7 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
 <div id="loadingScreen">
   <div class="load-icon">🎓</div>
   <div class="load-title">منصة الأداء التربوي</div>
-  <div class="load-sub">ذ. عبد الحق جعايط · الإصدار 9.0</div>
+  <div class="load-sub">ذ. عبد الحق جعايط · الإصدار 10</div>
   <div class="load-bar"><div class="load-fill"></div></div>
 </div>
 
@@ -801,6 +800,9 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <button class="nav-item" onclick="switchTab('library')" id="btn-library"><span class="nav-icon">📚</span> مكتبة القسم</button>
       <button class="nav-item" onclick="switchTab('sessions')" id="btn-sessions"><span class="nav-icon">🗓️</span> سجل الحصص</button>
       <button class="nav-item" onclick="switchTab('journal')" id="btn-journal"><span class="nav-icon">📘</span> المذكرة التربوية</button>
+      <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class">
+<span class="nav-icon">🎯</span> حصة اليوم
+</button>
       <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class">
 <span class="nav-icon">🎯</span> حصة اليوم
 </button>
