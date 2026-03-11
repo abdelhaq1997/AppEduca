@@ -1444,6 +1444,25 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
             </div>
           </div>
         </div>
+        <div class="card">
+
+<div class="card-header">
+<div class="card-title">النسخ الاحتياطية التلقائية</div>
+</div>
+
+<div class="card-body">
+
+<button class="btn btn-primary"
+onclick="createAutoWeeklyBackup().then(renderAutoBackupsList)">
+
+إنشاء نسخة الآن
+
+</button>
+
+<div id="autoBackupsList" style="margin-top:10px"></div>
+
+</div>
+</div>
       </section>
 
       <!-- ══ 19. مؤشر العدالة التعليمية ══ -->
@@ -5915,6 +5934,92 @@ async function importBackup(file){
 
  location.reload();
 }
+}
+    // ===== AUTO WEEKLY BACKUP =====
+async function createAutoWeeklyBackup() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const backupName = `backup_${yyyy}_${mm}_${dd}.json`;
+
+  const meta = await DB.get('backup_meta') || {};
+  const lastBackup = meta.lastAutoBackup ? new Date(meta.lastAutoBackup) : null;
+
+  if (lastBackup) {
+    const diffDays = Math.floor((now - lastBackup) / (1000 * 60 * 60 * 24));
+    if (diffDays < 7) return;
+  }
+
+  const pupils = await DB.get('pupils');
+  const grades = await DB.get('grades');
+  const activities = await DB.get('activities');
+  const attendance = await DB.get('attendance');
+  const notes = await DB.get('notes');
+
+  const payload = {
+    pupils,
+    grades,
+    activities,
+    attendance,
+    notes,
+    createdAt: now.toISOString(),
+    fileName: backupName
+  };
+
+  const backups = await DB.get('auto_backups') || [];
+  backups.unshift(payload);
+
+  const trimmed = backups.slice(0, 12);
+  await DB.set('auto_backups', trimmed);
+  await DB.set('backup_meta', { lastAutoBackup: now.toISOString() });
+  async function exportAutoBackup(index = 0) {
+
+ const backups = await DB.get('auto_backups') || [];
+ const backup = backups[index];
+ if (!backup) return;
+
+ const blob = new Blob(
+  [JSON.stringify(backup,null,2)],
+  {type:"application/json"}
+ );
+
+ const a = document.createElement("a");
+ a.href = URL.createObjectURL(blob);
+ a.download = backup.fileName;
+ a.click();
+}
+  async function renderAutoBackupsList(){
+
+ const box = document.getElementById("autoBackupsList");
+ if(!box) return;
+
+ const backups = await DB.get("auto_backups") || [];
+
+ box.innerHTML = backups.map((b,i)=>`
+
+ <div style="display:flex;justify-content:space-between;
+ align-items:center;margin-bottom:8px">
+
+ <span>${b.fileName}</span>
+
+ <button class="btn btn-sm btn-primary"
+ onclick="exportAutoBackup(${i})">
+
+ تنزيل
+
+ </button>
+
+ </div>
+
+ `).join("");
+}
+  document.addEventListener("DOMContentLoaded",async()=>{
+
+ await createAutoWeeklyBackup();
+ await renderAutoBackupsList();
+
+});
 }
 </script>
 </body>
