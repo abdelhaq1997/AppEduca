@@ -1391,8 +1391,12 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
             </div>
           </div>
         </div>
-      </section>
+        <button class="btn btn-primary" onclick="exportBackup()">
+☁️ تحميل النسخة الاحتياطية
+</button>
 
+<input type="file" onchange="importBackup(this.files[0])">
+      </section>
       <!-- ══ 18. مختبر الفرضيات التربوية ══ -->
       <!-- ... (نفس محتوى الفرضيات السابق) ... -->
       <section id="tab-hypothesis" class="tab-content">
@@ -5867,7 +5871,50 @@ Engine.calculateXP = async function(name){
  (a.initiatives||0)*6;
 
  return gradeXP + activityXP;
+// ===== EXPORT BACKUP =====
+async function exportBackup(){
 
+ const pupils = await DB.get('pupils');
+ const grades = await DB.get('grades');
+ const activities = await DB.get('activities');
+ const attendance = await DB.get('attendance');
+ const notes = await DB.get('notes');
+
+ const backup = {
+   pupils,
+   grades,
+   activities,
+   attendance,
+   notes,
+   date: new Date().toISOString()
+ };
+
+ const blob = new Blob(
+   [JSON.stringify(backup,null,2)],
+   {type:"application/json"}
+ );
+
+ const a = document.createElement("a");
+ a.href = URL.createObjectURL(blob);
+ a.download = "class_backup.json";
+ a.click();
+}
+
+
+// ===== IMPORT BACKUP =====
+async function importBackup(file){
+
+ const text = await file.text();
+ const data = JSON.parse(text);
+
+ await DB.set('pupils',data.pupils || {});
+ await DB.set('grades',data.grades || {});
+ await DB.set('activities',data.activities || {});
+ await DB.set('attendance',data.attendance || {});
+ await DB.set('notes',data.notes || {});
+
+ location.reload();
+}
 }
 </script>
 </body>
