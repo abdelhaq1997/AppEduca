@@ -801,7 +801,9 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <button class="nav-item" onclick="switchTab('library')" id="btn-library"><span class="nav-icon">📚</span> مكتبة القسم</button>
       <button class="nav-item" onclick="switchTab('sessions')" id="btn-sessions"><span class="nav-icon">🗓️</span> سجل الحصص</button>
       <button class="nav-item" onclick="switchTab('journal')" id="btn-journal"><span class="nav-icon">📘</span> المذكرة التربوية</button>
-      
+      <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class">
+<span class="nav-icon">🎯</span> حصة اليوم
+</button>
       <span class="nav-section-label">الإدارة</span>
       <button class="nav-item" onclick="switchTab('class-analysis')" id="btn-class-analysis"><span class="nav-icon">📈</span> تحليل القسم</button>
       <button class="nav-item" onclick="switchTab('parent-report')" id="btn-parent-report"><span class="nav-icon">👨‍👩‍👧</span> تقرير ولي الأمر</button>
@@ -5051,7 +5053,8 @@ const TAB_TITLES = {
   tools:'أدوات القسم', library:'مكتبة القسم', sessions:'سجل الحصص', journal:'المذكرة التربوية',
   'class-analysis':'📈 تحليل القسم', 'parent-report':'👨‍👩‍👧 تقرير ولي الأمر',
   reports:'تقارير المتعلمين', 'report-editor':'محرر التقارير', settings:'الإعدادات',
-  hypothesis:'🧪 مختبر الفرضيات التربوية', equity:'🎯 مؤشر العدالة التعليمية', biography:'📖 سيرة المتعلم التراكمية' 'today-class':'🎯 حصة اليوم',
+  hypothesis:'🧪 مختبر الفرضيات التربوية', equity:'🎯 مؤشر العدالة التعليمية', biography:'📖 سيرة المتعلم التراكمية',
+'today-class':'🎯 حصة اليوم',
 };
 
 async function switchTab(tabId) {
@@ -5891,8 +5894,8 @@ Engine.calculateXP = async function(name){
  (a.environment||0)*5 +
  (a.research||0)*8 +
  (a.initiatives||0)*6;
-
  return gradeXP + activityXP;
+}
 // ===== EXPORT BACKUP =====
 async function exportBackup(){
 
