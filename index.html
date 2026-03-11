@@ -5101,6 +5101,7 @@ async function refreshCurrentTab(tabId) {
     case 'class-analysis': await ClassAnalysis.render(); break;
     case 'parent-report': ParentReport.initSelect(); break;
     case 'today-class': await UI.renderTodayClass(); break;
+  }
 }
 function toggleSidebar() {
   const s = document.getElementById('appSidebar'), o = document.getElementById('mobileOverlay');
