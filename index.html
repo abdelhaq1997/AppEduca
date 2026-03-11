@@ -5978,7 +5978,7 @@ async function createAutoWeeklyBackup() {
   await DB.set('auto_backups', trimmed);
   await DB.set('backup_meta', { lastAutoBackup: now.toISOString() });
   async function exportAutoBackup(index = 0) {
-
+}
  const backups = await DB.get('auto_backups') || [];
  const backup = backups[index];
  if (!backup) return;
