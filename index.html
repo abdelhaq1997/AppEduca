@@ -113,55 +113,7 @@
   .modal-body{
     padding:14px !important;
   }
-}
-
-/* ===== WHEEL FULLSCREEN ===== */
-#wheelOverlay{
-  position:fixed;
-  inset:0;
-  background:#0f172a;
-  z-index:99999;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:20px;
-}
-
-#wheelOverlay.active{
-  display:flex;
-}
-
-#wheelCanvas{
-  width:min(92vmin, 820px);
-  height:min(92vmin, 820px);
-  max-width:92vmin;
-  max-height:92vmin;
-  background:transparent;
-}
-
-#wheelClose{
-  position:absolute;
-  top:16px;
-  left:16px;
-  background:#ef4444;
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:900;
-  z-index:2;
-}
-
-#wheelFullscreenBtn{
-  background:#4f46e5;
-  color:#fff;
-  border:none;
-  padding:10px 14px;
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:900;
+  State._refreshing = null;
 }
 
 /* ===== PRINT FIX ===== */
@@ -559,6 +511,16 @@ textarea.form-control{resize:vertical;min-height:60px}
 /* ─── WHEEL ─── */
 #wheelWinner{color:var(--warning)!important;text-shadow:0 2px 8px rgba(245,158,11,.5)}
 
+.tools-wheel-stack{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.tools-wheel-stage{position:relative;width:min(100%,420px);margin:0 auto}
+.tools-wheel-stage .wheel-arrow{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:28px;z-index:2}
+.tools-wheel-stage canvas{display:block;width:100%;height:auto;max-width:420px;margin:0 auto;border-radius:50%;box-shadow:var(--shadow-lg)}
+.timer-inline{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:12px 14px;max-width:360px;margin:0 auto}
+.timer-inline #timerDisplay{font-size:34px;letter-spacing:2px}
+.timer-inline .timer-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.tools-two-col{display:grid;grid-template-columns:1.05fr .95fr;gap:12px}
+@media(max-width:768px){.tools-two-col{grid-template-columns:1fr}.tools-wheel-stage{max-width:320px}.timer-inline #timerDisplay{font-size:28px}}
+
 /* ─── CLASSROOM MODE ─── */
 body.classroom-mode .sidebar{transform:translateX(100%)}
 body.classroom-mode .app-header{display:none}
@@ -792,14 +754,12 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       
       <span class="nav-section-label">الدعم والتدخل</span>
       <button class="nav-item" onclick="switchTab('remediation')" id="btn-remediation"><span class="nav-icon">💊</span> خطط الدعم التربوي</button>
-      <button class="nav-item" onclick="switchTab('support-groups')" id="btn-support-groups"><span class="nav-icon">👥</span> مجموعات الدعم التلقائية</button>
       <button class="nav-item" onclick="switchTab('notes')" id="btn-notes"><span class="nav-icon">📋</span> السلوكات والملاحظات</button>
       
       <span class="nav-section-label">أدوات القسم</span>
       <button class="nav-item" onclick="switchTab('tools')" id="btn-tools"><span class="nav-icon">🛠️</span> السبورة والمجموعات</button>
       <button class="nav-item" onclick="switchTab('library')" id="btn-library"><span class="nav-icon">📚</span> مكتبة القسم</button>
       <button class="nav-item" onclick="switchTab('sessions')" id="btn-sessions"><span class="nav-icon">🗓️</span> سجل الحصص</button>
-      <button class="nav-item" onclick="switchTab('journal')" id="btn-journal"><span class="nav-icon">📘</span> المذكرة التربوية</button>
       <button class="nav-item" onclick="switchTab('today-class')" id="btn-today-class">
 <span class="nav-icon">🎯</span> حصة اليوم
 </button>
@@ -810,10 +770,6 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <button class="nav-item" onclick="switchTab('report-editor')" id="btn-report-editor"><span class="nav-icon">📝</span> محرر التقارير</button>
       <button class="nav-item" onclick="switchTab('settings')" id="btn-settings"><span class="nav-icon">⚙️</span> الإعدادات والبيانات</button>
       
-      <span class="nav-section-label">الأبحاث والتحليل</span>
-      <button class="nav-item" onclick="switchTab('hypothesis')" id="btn-hypothesis"><span class="nav-icon">🧪</span> مختبر الفرضيات</button>
-      <button class="nav-item" onclick="switchTab('equity')" id="btn-equity"><span class="nav-icon">🎯</span> مؤشر العدالة</button>
-      <button class="nav-item" onclick="switchTab('biography')" id="btn-biography"><span class="nav-icon">📖</span> سيرة المتعلم</button>
       
       <button class="nav-item" onclick="toggleTheme()"><span class="nav-icon">🌙</span> الوضع الليلي</button>
       <button class="nav-item" onclick="AuthMgr.logout()" style="color:#ef4444;margin-top:12px"><span class="nav-icon" style="background:rgba(239,68,68,.1)">🚪</span> تسجيل الخروج</button>
@@ -846,7 +802,7 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       </div>
       <div id="syncIndicator" style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--r-full);background:var(--surface-2);border:1px solid var(--border)">🔄</div>
       <div id="syncStatus" style="font-size:10px;color:var(--success);font-weight:700;display:none"></div>
-      <button class="btn btn-primary btn-sm no-print" onclick="printClassReportUI()">🖨️ تقرير</button>
+      <button class="btn btn-primary btn-sm no-print" onclick="printCurrentTab()">🖨️ طباعة</button>
     </header>
     <div id="smartAlertsContainer" class="no-print"></div>
 
@@ -1102,18 +1058,6 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       </section>
 
       <!-- ══ 10. SUPPORT GROUPS (AUTO) ══ -->
-      <section id="tab-support-groups" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="icon">👥</div>مجموعات الدعم التلقائية</div>
-            <button class="btn btn-primary btn-sm" onclick="UI.generateSupportGroups()">⚡ توليد المجموعات تلقائياً</button>
-          </div>
-          <div class="card-body" id="supportGroupsContainer">
-            <div class="empty-state"><div class="empty-icon">👥</div><p>اضغط على "توليد المجموعات" لتحليل البيانات وتشكيل مجموعات الدعم تلقائياً</p></div>
-          </div>
-        </div>
-      </section>
-
       <!-- ══ 11. NOTES ══ -->
       <section id="tab-notes" class="tab-content">
         <div class="g2">
@@ -1145,46 +1089,78 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
           <button class="btn btn-primary no-print" onclick="toggleClassroomMode()" id="enterClassroomBtn">🔲 وضع السبورة (ملء الشاشة)</button>
           <button class="btn btn-danger no-print" onclick="removeClassroomMode()" id="exitClassroomBtnInner" style="display:none">❌ خروج من وضع الحصة</button>
         </div>
+
         <div class="g2">
-          <div class="card" style="text-align:center;padding:20px;margin-bottom:0">
-            <h3 style="margin-bottom:18px;font-family:'Cairo';font-weight:900">عجلة المشاركة العشوائية</h3>
-            <div style="position:relative;width:260px;height:260px;margin:0 auto">
-              <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:26px;z-index:10">👇</div>
-              <canvas id="wheelCanvas" width="260" height="260" style="border-radius:50%;box-shadow:var(--shadow-lg)"></canvas>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title"><div class="icon">🎲</div>العجلة</div>
+              <button class="btn btn-ghost btn-sm no-print tab-print-btn" onclick="printCurrentTab()">🖨️ طباعة</button>
             </div>
-            <div style="margin-top:16px">
-              <button class="btn btn-primary" onclick="UI.spinWheel()">🎲 اختر</button>
-              <button class="btn btn-ghost btn-sm" onclick="UI.resetWheel()">🔄</button>
-            </div>
-            <div id="wheelWinner" style="margin-top:16px;font-size:22px;font-weight:900;min-height:36px"></div>
-          </div>
-          <div class="timer-box">
-            <h4 style="font-size:14px;color:rgba(255,255,255,.45);margin-bottom:10px;font-weight:700">المؤقت التنازلي</h4>
-            <div id="timerDisplay">00:00</div>
-            <div style="display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap">
-              <button class="btn btn-success btn-sm" onclick="UI.startTimer(30)">30ث</button>
-              <button class="btn btn-success btn-sm" onclick="UI.startTimer(60)">1د</button>
-              <button class="btn btn-success btn-sm" onclick="UI.startTimer(120)">2د</button>
-              <button class="btn btn-success btn-sm" onclick="UI.startTimer(300)">5د</button>
-              <button class="btn btn-danger btn-sm" onclick="UI.stopTimer()">إيقاف</button>
-            </div>
-          </div>
-        </div>
-        <div class="card mt-12">
-          <div class="card-header"><div class="card-title"><div class="icon">👥</div>مُشكّل المجموعات الذكية</div></div>
-          <div class="card-body">
-            <div class="flex-row mb-12">
-              <div><label class="form-label">عدد المجموعات</label><input type="number" id="group-count" class="form-control" value="4" min="2" max="8" style="width:80px;text-align:center"></div>
-              <div><label class="form-label">معيار التجانس</label>
-                <select id="group-criteria" class="form-control">
-                  <option value="pi">مؤشر الأداء (PI)</option>
-                  <option value="fluency">الطلاقة القرائية</option>
-                  <option value="discipline">المواظبة والانضباط</option>
-                </select>
+            <div class="card-body tools-wheel-stack">
+              <div class="tools-wheel-stage">
+                <div class="wheel-arrow">👇</div>
+                <canvas id="wheelCanvas" width="420" height="420"></canvas>
               </div>
-              <button class="btn btn-primary" style="margin-top:20px" onclick="UI.generateGroups()">⚙️ تشكيل المجموعات</button>
+              <div class="flex-row" style="justify-content:center">
+                <button class="btn btn-primary" onclick="UI.spinWheel()">🎯 اختر</button>
+                <button class="btn btn-ghost btn-sm" onclick="UI.resetWheel()">🔄 إعادة الجميع</button>
+              </div>
+              <div id="wheelWinner" style="font-size:24px;font-weight:900;min-height:38px"></div>
+
+              <div class="timer-inline" style="max-width:280px;margin:10px auto 0">
+                <div style="font-size:12px;color:var(--text-3);font-weight:800;margin-bottom:6px">مؤقت سريع</div>
+                <div id="timerDisplay">00:00</div>
+                <div class="timer-actions">
+                  <button class="btn btn-success btn-sm" onclick="UI.startTimer(30)">30ث</button>
+                  <button class="btn btn-success btn-sm" onclick="UI.startTimer(60)">1د</button>
+                  <button class="btn btn-success btn-sm" onclick="UI.startTimer(120)">2د</button>
+                  <button class="btn btn-danger btn-sm" onclick="UI.stopTimer()">إيقاف</button>
+                </div>
+              </div>
             </div>
-            <div class="groups-container" id="groupsOutput"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title"><div class="icon">👥</div>المجموعات</div></div>
+            <div class="card-body">
+              <div class="tools-panels-grid">
+                <div class="tool-panel">
+                  <div class="tool-panel-head">تشكيل المجموعات</div>
+                  <div class="flex-row mb-12">
+                    <div><label class="form-label">عدد المجموعات</label><input type="number" id="group-count" class="form-control" value="4" min="2" max="8" style="width:80px;text-align:center"></div>
+                    <div><label class="form-label">معيار التجانس</label>
+                      <select id="group-criteria" class="form-control">
+                        <option value="pi">مؤشر الأداء (PI)</option>
+                        <option value="fluency">الطلاقة القرائية</option>
+                        <option value="discipline">المواظبة والانضباط</option>
+                      </select>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top:20px" onclick="UI.generateGroups()">⚙️ تشكيل المجموعات</button>
+                  </div>
+                  <div class="groups-container" id="groupsOutput"></div>
+                </div>
+
+                <div class="tool-panel">
+                  <div class="tool-panel-head">مجموعات الدعم التلقائية</div>
+                  <div class="flex-row mb-12">
+                    <button class="btn btn-primary btn-sm" onclick="UI.generateSupportGroups()">⚡ توليد المجموعات</button>
+                  </div>
+                  <div id="supportGroupsContainer">
+                    <div class="empty-state"><div class="empty-icon">👥</div><p>اضغط على "توليد المجموعات" لتحليل البيانات وتشكيل مجموعات الدعم تلقائيًا</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><div class="card-title"><div class="icon">🛠️</div>أدوات الصف</div></div>
+            <div class="card-body flex-row">
+              <button class="btn btn-outline btn-sm" onclick="UI.resetWheel()">إعادة ضبط العجلة</button>
+              <button class="btn btn-outline btn-sm" onclick="toggleClassroomMode()">وضع السبورة</button>
+              <button class="btn btn-outline btn-sm" onclick="removeClassroomMode()">الخروج من وضع السبورة</button>
+              <button class="btn btn-outline btn-sm" onclick="printCurrentTab()">طباعة تبويب الأدوات</button>
+            </div>
           </div>
         </div>
       </section>
@@ -1405,145 +1381,9 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       </section>
       <!-- ══ 18. مختبر الفرضيات التربوية ══ -->
       <!-- ... (نفس محتوى الفرضيات السابق) ... -->
-      <section id="tab-hypothesis" class="tab-content">
-        <div class="g2">
-          <div class="card">
-            <div class="card-header"><div class="card-title"><div class="icon">🧪</div>تسجيل فرضية تربوية جديدة</div></div>
-            <div class="card-body">
-              <div class="form-group"><label class="form-label">المتعلم المعني</label><select id="hyp-student" class="form-control"></select></div>
-              <div class="form-group">
-                <label class="form-label">نص الفرضية</label>
-                <textarea id="hyp-text" class="form-control" style="height:80px" placeholder="مثال: أعتقد أن تغيير جلوس هشام بجانب أنور سيحسن أداءه..."></textarea>
-              </div>
-              <div class="form-group"><label class="form-label">المؤشر المتتبَّع</label>
-                <select id="hyp-metric" class="form-control">
-                  <option value="grades">📊 تحسن الدرجات</option>
-                  <option value="attendance">📅 انتظام الحضور</option>
-                  <option value="homework">📝 إنجاز الواجبات</option>
-                  <option value="behavior">⚠️ تحسن السلوك</option>
-                  <option value="participation">🙋 المشاركة الصفية</option>
-                </select>
-              </div>
-              <div class="form-group"><label class="form-label">القيمة الأساسية الآن (قبل)</label><input type="number" id="hyp-baseline" class="form-control" placeholder="مثلاً: 5 (درجة أو عدد مرات)"></div>
-              <div class="form-group"><label class="form-label">تاريخ البدء</label><input type="date" id="hyp-date" class="form-control"></div>
-              <button class="btn btn-primary w-full" onclick="HypLab.save()">🔬 بدء تتبع الفرضية (3 أسابيع)</button>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title"><div class="icon">📋</div>الفرضيات الجارية والمكتملة</div></div>
-            <div class="card-body" id="hypList" style="display:flex;flex-direction:column;gap:12px">
-              <div class="empty-state"><div class="empty-icon">🔬</div><p>لم تُسجَّل أي فرضية بعد</p></div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-overlay" id="hypUpdateModal">
-          <div class="modal" style="max-width:480px">
-            <div class="modal-header">
-              <span style="font-weight:900">📊 تحديث نتيجة الفرضية</span>
-              <button class="modal-close" onclick="UI.closeModal('hypUpdateModal')">✕</button>
-            </div>
-            <div class="modal-body">
-              <input type="hidden" id="hyp-update-id">
-              <div class="form-group"><label class="form-label">القيمة الجديدة (بعد)</label><input type="number" id="hyp-after-val" class="form-control"></div>
-              <div class="form-group"><label class="form-label">ملاحظة ختامية</label><textarea id="hyp-conclusion" class="form-control" placeholder="ما لاحظته فعلياً..."></textarea></div>
-              <button class="btn btn-primary w-full" onclick="HypLab.conclude()">✅ تأكيد النتيجة</button>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-
-<div class="card-header">
-<div class="card-title">النسخ الاحتياطية التلقائية</div>
-</div>
-
-<div class="card-body">
-
-<button class="btn btn-primary"
-onclick="createAutoWeeklyBackup().then(renderAutoBackupsList)">
-
-إنشاء نسخة الآن
-
-</button>
-
-<div id="autoBackupsList" style="margin-top:10px"></div>
-
-</div>
-</div>
-      </section>
-
       <!-- ══ 19. مؤشر العدالة التعليمية ══ -->
-      <section id="tab-equity" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="icon">🎯</div>مؤشر العدالة التعليمية</div>
-            <button class="btn btn-primary btn-sm" onclick="EquityMgr.analyze()">🔍 تحليل الآن</button>
-          </div>
-          <div class="card-body" id="equityContainer">
-            <div class="empty-state"><div class="empty-icon">🎯</div><p>اضغط "تحليل الآن" لعرض مرآتك التربوية</p></div>
-          </div>
-        </div>
-      </section>
-
       <!-- ══ 20. سيرة المتعلم التراكمية ══ -->
-      <section id="tab-biography" class="tab-content">
-        <div class="g2" style="align-items:flex-start">
-          <div class="card">
-            <div class="card-header"><div class="card-title"><div class="icon">📖</div>اختر متعلماً</div></div>
-            <div class="card-body">
-              <div class="form-group"><label class="form-label">المتعلم</label><select id="bio-student" class="form-control" onchange="BioMgr.render()"></select></div>
-              <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.2);border-radius:var(--r-md);padding:12px;font-size:11.5px;color:var(--brand-600);font-weight:700">
-                💡 الملف يتراكم تلقائياً من الغياب، الواجبات، الدرجات، والملاحظات. يمكنك إضافة ملاحظة للأستاذ القادم.
-              </div>
-              <div class="form-group mt-12"><label class="form-label">ملاحظة للأستاذ القادم 📝</label>
-                <textarea id="bio-transfer-note" class="form-control" style="height:80px" placeholder="اكتب ما يجب أن يعرفه الأستاذ القادم..."></textarea>
-              </div>
-              <button class="btn btn-primary w-full" onclick="BioMgr.saveNote()">💾 حفظ الملاحظة</button>
-            </div>
-          </div>
-          <div id="bioProfile" style="flex:1">
-            <div class="empty-state"><div class="empty-icon">📖</div><p>اختر متعلماً لعرض سيرته التراكمية</p></div>
-          </div>
-        </div>
-      </section>
-
-
-
-
       <!-- ══ JOURNAL ══ -->
-      <section id="tab-journal" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title"><div class="icon">📘</div>المذكرة التربوية الأسبوعية</div>
-            <div class="flex-row no-print" style="flex-wrap:wrap">
-              <button class="btn btn-success btn-sm" onclick="Journal.createNewWeek()">➕ إنشاء أسبوع جديد</button>
-              <button class="btn btn-warning btn-sm" onclick="Journal.copyPreviousWeek()">📄 نسخ الأسبوع الماضي</button>
-              <button class="btn btn-ghost btn-sm" onclick="Journal.copyArabicToAllDays()">🔁 نسخ العربية لبقية الأيام</button>
-              <button class="btn btn-info btn-sm" onclick="BackupMgr.exportJSON()">💾 نسخة احتياطية</button>
-              <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0">
-                📥 استرجاع نسخة
-                <input type="file" id="journalRestoreFile" style="display:none" accept=".json" onchange="BackupMgr.importJSON(this)">
-              </label>
-            </div>
-          </div>
-          <div class="card-body" id="journalPrintArea">
-            <div class="journal-toolbar no-print">
-              <div class="right" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <span class="journal-week-badge" id="journalWeekBadge">أسبوع —</span>
-                <select id="journalWeekSelect" class="form-control" style="width:240px" onchange="Journal.changeWeek(this.value)"></select>
-                <span id="journalSaveState" class="journal-save-state">جاهز</span>
-              </div>
-              <div class="left" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                <button class="btn btn-ghost btn-sm" onclick="Journal.resetCurrentWeekTexts()">🧹 تفريغ نصوص الأسبوع</button>
-                <button class="btn btn-primary btn-sm" onclick="Journal.exportPrintablePDF()">📄 تجهيز ملف الطباعة</button>
-              </div>
-            </div>
-            <div id="journalStats" class="journal-stats no-print"></div>
-            <div id="journalSubjectStats" class="journal-subject-stats no-print"></div>
-            <div id="journalDays" class="journal-days"></div>
-          </div>
-        </div>
-      </section>
-
       <!-- ══ CLASS ANALYSIS ══ -->
       <section id="tab-class-analysis" class="tab-content">
         <div class="card mb-0">
@@ -5059,6 +4899,8 @@ const TAB_TITLES = {
 'today-class':'🎯 حصة اليوم',
 };
 async function switchTab(tabId) {
+  const aliasTabs = { 'support-groups':'tools', 'journal':'sessions', 'hypothesis':'dashboard', 'equity':'dashboard', 'biography':'reports' };
+  tabId = aliasTabs[tabId] || tabId;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   const tab = document.getElementById('tab-' + tabId);
@@ -5077,31 +4919,32 @@ async function switchTab(tabId) {
 
 async function refreshCurrentTab(tabId) {
   const t = tabId || State.tab;
-  Engine.invalidate();
-  switch (t) {
-    case 'dashboard': await UI.renderDashboard(); break;
-    case 'heatmap': await UI.renderHeatmap(); break;
-    case 'honor': await UI.renderHonorRoll(); break;
-    case 'fluency': await UI.renderFluency(); break;
-    case 'attendance': await UI.renderAttendance(); break;
-    case 'homework': await UI.renderHomework(); break;
-    case 'grades': await UI.renderGrades(); break;
-    case 'activities': await UI.renderActivities(); break;
-    case 'remediation': await UI.renderRemediation(); break;
-    case 'support-groups': break;
-    case 'notes': await UI.renderNotes(); break;
-    case 'library': await UI.renderLibrary(); break;
-    case 'sessions': await UI.renderSessions(); break;
-    case 'journal': await UI.renderJournal(); break;
-    case 'reports': await UI.renderReports(); break;
-    case 'report-editor': await UI.renderReportEditor(); break;
-    case 'settings': await UI.renderSettingsPupils(); break;
-    case 'hypothesis': await HypLab.render(); break;
-    case 'equity': break;
-    case 'biography': break;
-    case 'class-analysis': await ClassAnalysis.render(); break;
-    case 'parent-report': ParentReport.initSelect(); break;
-    case 'today-class': await UI.renderTodayClass(); break;
+  if (State._refreshing === t) return;
+  State._refreshing = t;
+  try {
+    switch (t) {
+      case 'dashboard': await UI.renderDashboard(); break;
+      case 'heatmap': await UI.renderHeatmap(); break;
+      case 'honor': await UI.renderHonorRoll(); break;
+      case 'fluency': await UI.renderFluency(); break;
+      case 'attendance': await UI.renderAttendance(); break;
+      case 'homework': await UI.renderHomework(); break;
+      case 'grades': await UI.renderGrades(); break;
+      case 'activities': await UI.renderActivities(); break;
+      case 'remediation': await UI.renderRemediation(); break;
+      case 'notes': await UI.renderNotes(); break;
+      case 'library': await UI.renderLibrary(); break;
+      case 'sessions': await UI.renderSessions(); break;
+      case 'reports': await UI.renderReports(); break;
+      case 'report-editor': await UI.renderReportEditor(); break;
+      case 'settings': await UI.renderSettingsPupils(); break;
+      case 'class-analysis': await ClassAnalysis.render(); break;
+      case 'parent-report': ParentReport.initSelect(); break;
+      case 'today-class': await UI.renderTodayClass(); break;
+      case 'tools': UI.resetWheel(); break;
+    }
+  } finally {
+    State._refreshing = null;
   }
 }
 function toggleSidebar() {
@@ -5200,6 +5043,68 @@ async function printFluencyAllWeeks() {
   
   document.body.className = 'print-fluency-all'; window.print(); document.body.className = '';
 }
+
+
+function printCurrentTab(){
+  const tab = State.tab;
+
+  document.body.classList.remove(
+    "print-mode-report",
+    "print-mode-cert",
+    "print-section",
+    "print-report-editor",
+    "print-fluency-all"
+  );
+
+  if(tab === "attendance"){
+    UI.renderAttendance();
+    document.body.classList.add("print-section");
+  }
+
+  else if(tab === "fluency"){
+    UI.renderFluency();
+    document.body.classList.add("print-fluency-all");
+  }
+
+  else if(tab === "grades"){
+    UI.renderGrades();
+    document.body.classList.add("print-section");
+  }
+
+  else if(tab === "sessions"){
+    UI.renderSessions();
+    document.body.classList.add("print-section");
+  }
+
+  else if(tab === "reports"){
+    UI.renderReports();
+    document.body.classList.add("print-mode-report");
+  }
+
+  else if(tab === "report-editor"){
+    document.body.classList.add("print-report-editor");
+  }
+
+  else{
+    document.body.classList.add("print-section");
+  }
+
+  setTimeout(()=>{
+    window.print();
+
+    setTimeout(()=>{
+      document.body.classList.remove(
+        "print-mode-report",
+        "print-mode-cert",
+        "print-section",
+        "print-report-editor",
+        "print-fluency-all"
+      );
+    },500);
+
+  },300);
+}
+
 
 async function printClassReportUI() {
   const year = State.year, level = State.level;
@@ -5639,7 +5544,25 @@ window.addEventListener('load', async () => {
       }
       const teacher = await Store.get('setting_teacher', 'الأستاذ');
       const school = await Store.get('setting_school', 'المدرسة');
-      const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم المتعثرين</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:980px;margin:auto}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.muted{color:#666;font-size:12px}</style>
+      const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم المتعثرين</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:980px;margin:auto}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.muted{color:#666;font-size:12px}
+@media print{
+  .tab-container{
+    overflow:visible !important;
+  }
+
+  table{
+    page-break-inside:auto;
+  }
+
+  tr{
+    page-break-inside:avoid;
+  }
+
+  canvas{
+    max-width:100% !important;
+  }
+}
+</style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
@@ -5794,602 +5717,5 @@ document.getElementById('installApp').addEventListener('click', async () => {
 });
 </script>
   <script src="./pwa.js"></script>
-  <div id="wheelOverlay" class="no-print">
-  <button id="wheelClose" type="button">خروج</button>
-  <canvas id="wheelCanvas" width="900" height="900"></canvas>
-</div>
-  <script>
-function openWheelFullScreen() {
-  const overlay = document.getElementById("wheelOverlay");
-  if (!overlay) return;
-  overlay.classList.add("active");
-
-  if (document.documentElement.requestFullscreen) {
-    document.documentElement.requestFullscreen().catch(() => {});
-  }
-}
-
-function closeWheelFullScreen() {
-  const overlay = document.getElementById("wheelOverlay");
-  if (!overlay) return;
-  overlay.classList.remove("active");
-
-  if (document.fullscreenElement && document.exitFullscreen) {
-    document.exitFullscreen().catch(() => {});
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const closeBtn = document.getElementById("wheelClose");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", closeWheelFullScreen);
-  }
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeWheelFullScreen();
-  });
-
-  const wheelArea =
-    document.querySelector("#tab-tools .card-header") ||
-    document.querySelector("#tab-tools");
-
-  if (wheelArea && !document.getElementById("wheelFullscreenBtn")) {
-    const btn = document.createElement("button");
-    btn.id = "wheelFullscreenBtn";
-    btn.type = "button";
-    btn.textContent = "ملء الشاشة";
-    btn.className = "btn btn-primary btn-sm";
-    btn.addEventListener("click", openWheelFullScreen);
-    wheelArea.appendChild(btn);
-  }
-});
-
-function printSectionById(id) {
-  const area = document.getElementById(id);
-  if (!area) return;
-
-  const win = window.open("", "_blank", "width=1000,height=800");
-  if (!win) return;
-
-  win.document.write(`
-    <html lang="ar" dir="rtl">
-    <head>
-      <meta charset="UTF-8">
-      <title>طباعة</title>
-      <style>
-        body{font-family:Tajawal,Arial,sans-serif;padding:20px;direction:rtl}
-        table{width:100%;border-collapse:collapse}
-        th,td{border:1px solid #ccc;padding:6px;text-align:right}
-        .card{border:none;box-shadow:none}
-        canvas{max-width:100%}
-      </style>
-    </head>
-    <body>${area.innerHTML}</body>
-    </html>
-  `);
-
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 400);
-}
-    /* ===== حساب التحفيز من الفروض والأنشطة ===== */
-
-Engine.calculateXP = async function(name){
-
- const avg = await Engine.generalAvg(name, State.level, State.year) || 0;
-
- let gradeXP = 0;
-
- if(avg >= 9) gradeXP = 50;
- else if(avg >= 8) gradeXP = 40;
- else if(avg >= 7) gradeXP = 30;
- else if(avg >= 6) gradeXP = 20;
- else gradeXP = 10;
-
- const acts = await DB.get('activities');
- const a = acts[name] || {projects:0,environment:0,research:0,initiatives:0};
-
- const activityXP =
- (a.projects||0)*10 +
- (a.environment||0)*5 +
- (a.research||0)*8 +
- (a.initiatives||0)*6;
- return gradeXP + activityXP;
-}
-// ===== EXPORT BACKUP =====
-async function exportBackup(){
-
- const pupils = await DB.get('pupils');
- const grades = await DB.get('grades');
- const activities = await DB.get('activities');
- const attendance = await DB.get('attendance');
- const notes = await DB.get('notes');
-
- const backup = {
-   pupils,
-   grades,
-   activities,
-   attendance,
-   notes,
-   date: new Date().toISOString()
- };
-
- const blob = new Blob(
-   [JSON.stringify(backup,null,2)],
-   {type:"application/json"}
- );
-
- const a = document.createElement("a");
- a.href = URL.createObjectURL(blob);
- a.download = "class_backup.json";
- a.click();
-}
-
-
-// ===== IMPORT BACKUP =====
-async function importBackup(file){
-
- const text = await file.text();
- const data = JSON.parse(text);
-
- await DB.set('pupils',data.pupils || {});
- await DB.set('grades',data.grades || {});
- await DB.set('activities',data.activities || {});
- await DB.set('attendance',data.attendance || {});
- await DB.set('notes',data.notes || {});
-
- location.reload();
-}
-    // ===== AUTO WEEKLY BACKUP =====
-async function createAutoWeeklyBackup() {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const backupName = `backup_${yyyy}_${mm}_${dd}.json`;
-
-  const meta = await DB.get('backup_meta') || {};
-  const lastBackup = meta.lastAutoBackup ? new Date(meta.lastAutoBackup) : null;
-
-  if (lastBackup) {
-    const diffDays = Math.floor((now - lastBackup) / (1000 * 60 * 60 * 24));
-    if (diffDays < 7) return;
-  }
-
-  const pupils = await DB.get('pupils');
-  const grades = await DB.get('grades');
-  const activities = await DB.get('activities');
-  const attendance = await DB.get('attendance');
-  const notes = await DB.get('notes');
-
-  const payload = {
-    pupils,
-    grades,
-    activities,
-    attendance,
-    notes,
-    createdAt: now.toISOString(),
-    fileName: backupName
-  };
-
-  const backups = await DB.get('auto_backups') || [];
-  backups.unshift(payload);
-
-  const trimmed = backups.slice(0, 12);
-  await DB.set('auto_backups', trimmed);
-  await DB.set('backup_meta', { lastAutoBackup: now.toISOString() });
-}
-
-async function exportAutoBackup(index = 0) {
-  const backups = await DB.get('auto_backups') || [];
-  const backup = backups[index];
-  if (!backup) return;
-
-  const blob = new Blob(
-    [JSON.stringify(backup, null, 2)],
-    { type: "application/json" }
-  );
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = backup.fileName;
-  a.click();
-}
-  async function renderAutoBackupsList(){
-
- const box = document.getElementById("autoBackupsList");
- if(!box) return;
-
- const backups = await DB.get("auto_backups") || [];
-
- box.innerHTML = backups.map((b,i)=>`
-
- <div style="display:flex;justify-content:space-between;
- align-items:center;margin-bottom:8px">
-
- <span>${b.fileName}</span>
-
- <button class="btn btn-sm btn-primary"
- onclick="exportAutoBackup(${i})">
-
- تنزيل
-
- </button>
-
- </div>
-
- `).join("");
-}
-  document.addEventListener("DOMContentLoaded",async()=>{
-
- await createAutoWeeklyBackup();
- await renderAutoBackupsList();
-
-});
-  // ===== SMART SUPPORT INDEX =====
-Engine.getSmartSupportIndex = async function(name) {
-  const r = await Engine.calculatePI(name, State.level);
-  let score = 100;
-
-  score -= Math.max(0, (5 - (r.raw.gAvg || 5)) * 12);
-  score -= Math.min(30, (r.raw.absCount || 0) * 5);
-  score -= Math.min(20, (r.raw.hwMisses || 0) * 4);
-  score -= Math.max(0, (5 - (r.raw.fluAvg || 0)) * 6);
-
-  const allNotes = await DB.get('notes');
-  const negNotes = (allNotes || []).filter(n =>
-    n.student === name && (n.type === 'behavior' || n.type === 'academic')
-  ).length;
-  score -= Math.min(20, negNotes * 3);
-
-  score = Math.max(0, Math.min(100, score));
-
-  let label = 'مستقر';
-  let color = 'var(--success)';
-  if (score < 70) { label = 'يحتاج متابعة'; color = 'var(--warning)'; }
-  if (score < 45) { label = 'يحتاج دعماً عاجلاً'; color = 'var(--danger)'; }
-
-  return { score, label, color, pi: r.pi, raw: r.raw };
-};
-
-
-// ===== PROGRESS TRACKER =====
-Engine.getStudentTrend = async function(name) {
-  const grades = await DB.get('grades');
-  const values = [];
-
-  Object.keys(grades || {}).forEach(subj => {
-    const g = ((grades[subj] || {})[name]) || {};
-    Object.keys(g).forEach(k => {
-      const v = parseFloat(g[k]);
-      if (!isNaN(v)) values.push(v);
-    });
-  });
-
-  const last3 = values.slice(-3);
-  if (!last3.length) {
-    return { trend: '—', delta: 0, label: 'لا توجد بيانات', color: 'var(--text-3)' };
-  }
-
-  const first = last3[0];
-  const last = last3[last3.length - 1];
-  const delta = +(last - first).toFixed(2);
-
-  if (delta > 0.5) return { trend: 'صاعد', delta, label: `↗ +${delta}`, color: 'var(--success)' };
-  if (delta < -0.5) return { trend: 'متراجع', delta, label: `↘ ${delta}`, color: 'var(--danger)' };
-  return { trend: 'مستقر', delta, label: '→ مستقر', color: 'var(--warning)' };
-};
-
-
-// ===== MORNING DECISION BOARD =====
-UI.renderMorningDecisionBoard = async function() {
-  const pupils = PupilMgr.getPupilNames();
-  const rows = [];
-
-  for (const p of pupils) {
-    const support = await Engine.getSmartSupportIndex(p);
-    const trend = await Engine.getStudentTrend(p);
-    const perf = await Engine.calculatePI(p, State.level);
-    rows.push({ name: p, support, trend, perf });
-  }
-
-  const urgent = [...rows]
-    .sort((a, b) => a.support.score - b.support.score)
-    .slice(0, 3);
-
-  const motiv = [...rows]
-    .sort((a, b) => (b.trend.delta + b.perf.pi) - (a.trend.delta + a.perf.pi))
-    .slice(0, 3);
-
-  const att = await DB.get('attendance');
-  const allDates = Object.keys(att || {}).sort().slice(-7);
-  let absCount = 0;
-  allDates.forEach(d => {
-    Object.values(att[d] || {}).forEach(v => {
-      const st = typeof v === 'object' ? v?.status : v;
-      if (st === 'absent') absCount++;
-    });
-  });
-
-  const grades = await DB.get('grades');
-  const subjMap = {
-    arabic:'العربية',
-    islamic:'الإسلامية',
-    social:'الاجتماعيات',
-    art:'الفنية',
-    pe:'البدنية'
-  };
-
-  let weakestSubj = '—';
-  let weakestAvg = 10;
-
-  Object.keys(subjMap).forEach(subj => {
-    let sum = 0, cnt = 0;
-    const subjData = grades[subj] || {};
-    Object.values(subjData).forEach(st => {
-      Object.values(st || {}).forEach(v => {
-        const n = parseFloat(v);
-        if (!isNaN(n)) { sum += n; cnt++; }
-      });
-    });
-    if (cnt) {
-      const avg = sum / cnt;
-      if (avg < weakestAvg) {
-        weakestAvg = avg;
-        weakestSubj = subjMap[subj];
-      }
-    }
-  });
-
-  return `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title"><div class="icon">🌅</div>لوحة القرار الصباحية</div>
-      </div>
-      <div class="card-body">
-        <div class="g3">
-          <div class="card" style="margin-bottom:0">
-            <div class="card-header"><div class="card-title">تدخل اليوم</div></div>
-            <div class="card-body">
-              ${urgent.map(x => `
-                <div class="note-item academic" style="margin-bottom:8px">
-                  <div class="note-meta"><span>${x.name}</span><span style="color:${x.support.color};font-weight:900">${x.support.label}</span></div>
-                  <div class="note-text">PI: ${x.perf.pi.toFixed(1)} · ${x.trend.label}</div>
-                </div>
-              `).join('') || '<div class="text-muted">لا يوجد</div>'}
-            </div>
-          </div>
-
-          <div class="card" style="margin-bottom:0">
-            <div class="card-header"><div class="card-title">تحفيز اليوم</div></div>
-            <div class="card-body">
-              ${motiv.map(x => `
-                <div class="note-item positive" style="margin-bottom:8px">
-                  <div class="note-meta"><span>${x.name}</span><span>${x.trend.label}</span></div>
-                  <div class="note-text">PI: ${x.perf.pi.toFixed(1)} · XP: ${x.perf.xp.toFixed(0)}</div>
-                </div>
-              `).join('') || '<div class="text-muted">لا يوجد</div>'}
-            </div>
-          </div>
-
-          <div class="card" style="margin-bottom:0">
-            <div class="card-header"><div class="card-title">ملخص سريع</div></div>
-            <div class="card-body">
-              <div class="note-item"><div class="note-meta"><span>الغياب آخر 7 أيام</span></div><div class="note-text">${absCount}</div></div>
-              <div class="note-item"><div class="note-meta"><span>أضعف مادة</span></div><div class="note-text">${weakestSubj}${weakestAvg < 10 ? ` · ${weakestAvg.toFixed(2)}/10` : ''}</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-};
-
-
-// ===== WEEKLY REPORT =====
-UI.generateWeeklyClassReport = async function() {
-  const pupils = PupilMgr.getPupilNames();
-  const rows = [];
-
-  for (const p of pupils) {
-    const perf = await Engine.calculatePI(p, State.level);
-    const support = await Engine.getSmartSupportIndex(p);
-    const trend = await Engine.getStudentTrend(p);
-    rows.push({ name: p, perf, support, trend });
-  }
-
-  const improving = rows.filter(x => x.trend.delta > 0.5).length;
-  const struggling = rows.filter(x => x.support.score < 45).length;
-
-  const att = await DB.get('attendance');
-  const last7 = Object.keys(att || {}).sort().slice(-7);
-  let abs = 0;
-  last7.forEach(d => {
-    Object.values(att[d] || {}).forEach(v => {
-      const st = typeof v === 'object' ? v?.status : v;
-      if (st === 'absent') abs++;
-    });
-  });
-
-  const acts = await DB.get('activities');
-  let totalActs = 0;
-  Object.values(acts || {}).forEach(a => {
-    totalActs += (a.projects || 0) + (a.environment || 0) + (a.research || 0) + (a.initiatives || 0);
-  });
-
-  const avgPI = rows.length ? (rows.reduce((s, x) => s + x.perf.pi, 0) / rows.length) : 0;
-  const avgGrades = rows.length ? (rows.reduce((s, x) => s + (x.perf.raw.gAvg || 0), 0) / rows.length) : 0;
-
-  const html = `
-    <div style="direction:rtl;padding:20px;font-family:Tajawal,Arial,sans-serif">
-      <h2 style="margin-bottom:14px">التقرير الأسبوعي الآلي للقسم</h2>
-      <p><strong>التاريخ:</strong> ${State.today}</p>
-      <p><strong>متوسط PI:</strong> ${avgPI.toFixed(2)}</p>
-      <p><strong>متوسط الفروض:</strong> ${avgGrades.toFixed(2)}/10</p>
-      <p><strong>المتعلمون المتحسنون:</strong> ${improving}</p>
-      <p><strong>المتعلمون المتعثرون:</strong> ${struggling}</p>
-      <p><strong>الغيابات آخر 7 أيام:</strong> ${abs}</p>
-      <p><strong>إجمالي الأنشطة المندمجة:</strong> ${totalActs}</p>
-
-      <h3 style="margin-top:18px">تفصيل المتعلمين</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-          <tr>
-            <th style="border:1px solid #ccc;padding:6px">الاسم</th>
-            <th style="border:1px solid #ccc;padding:6px">PI</th>
-            <th style="border:1px solid #ccc;padding:6px">معدل الفروض</th>
-            <th style="border:1px solid #ccc;padding:6px">مؤشر الدعم</th>
-            <th style="border:1px solid #ccc;padding:6px">التحسن</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map(x => `
-            <tr>
-              <td style="border:1px solid #ccc;padding:6px">${x.name}</td>
-              <td style="border:1px solid #ccc;padding:6px">${x.perf.pi.toFixed(2)}</td>
-              <td style="border:1px solid #ccc;padding:6px">${(x.perf.raw.gAvg || 0).toFixed(2)}</td>
-              <td style="border:1px solid #ccc;padding:6px">${x.support.label} (${x.support.score.toFixed(0)})</td>
-              <td style="border:1px solid #ccc;padding:6px">${x.trend.label}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-
-      <p style="margin-top:18px"><strong>توصية أسبوعية:</strong> ${struggling > 0 ? 'التركيز على المتعلمين ذوي مؤشر الدعم المنخفض مع دعم موجّه في المهارات الأساسية.' : 'الاستمرار مع تعزيز المتحسنين وتوسيع الأنشطة المندمجة.'}</p>
-    </div>
-  `;
-
-  const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  win.print();
-};
-
-
-// ===== TODAY CLASS MODE =====
-UI.renderTodayClass = async function() {
-  const pupils = PupilMgr.getPupilNames();
-  const att = (await DB.get('attendance'))[State.today] || {};
-  const hw = (await DB.get('homework'))[State.today] || {};
-
-  const urgent = [];
-  for (const p of pupils) {
-    const support = await Engine.getSmartSupportIndex(p);
-    if (support.score < 45) urgent.push({ name: p, support });
-  }
-
-  const html = `
-    <div class="g2">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><div class="icon">📅</div>حصة اليوم</div>
-          <button class="btn btn-primary btn-sm" onclick="UI.generateWeeklyClassReport()">🖨️ التقرير الأسبوعي</button>
-        </div>
-        <div class="card-body">
-          <div class="g3">
-            <div class="stat-box"><div class="stat-lbl">تاريخ اليوم</div><div class="stat-val" style="font-size:20px">${State.today}</div></div>
-            <div class="stat-box"><div class="stat-lbl">الحاضرون</div><div class="stat-val" style="font-size:20px">${pupils.filter(p => ((typeof att[p] === 'object' ? att[p]?.status : att[p]) !== 'absent')).length}</div></div>
-            <div class="stat-box"><div class="stat-lbl">الغياب</div><div class="stat-val" style="font-size:20px">${pupils.filter(p => ((typeof att[p] === 'object' ? att[p]?.status : att[p]) === 'absent')).length}</div></div>
-            <div class="stat-box"><div class="stat-lbl">واجبات منجزة</div><div class="stat-val" style="font-size:20px">${Object.values(hw).filter(v => v === 'done').length}</div></div>
-          </div>
-
-          <div class="card mt-12" style="margin-bottom:0">
-            <div class="card-header"><div class="card-title">تنبيه سريع</div></div>
-            <div class="card-body">
-              ${urgent.length ? urgent.map(x => `
-                <div class="note-item behavior">
-                  <div class="note-meta"><span>${x.name}</span><span style="color:${x.support.color}">${x.support.label}</span></div>
-                  <div class="note-text">مؤشر الدعم: ${x.support.score.toFixed(0)}</div>
-                </div>
-              `).join('') : '<div class="text-muted">لا توجد حالات حرجة اليوم</div>'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><div class="card-title"><div class="icon">⚡</div>إجراءات سريعة</div></div>
-        <div class="card-body">
-          <div class="flex-row">
-            <button class="btn btn-success" onclick="switchTab('attendance')">الحضور</button>
-            <button class="btn btn-warning" onclick="switchTab('homework')">الواجب</button>
-            <button class="btn btn-info" onclick="switchTab('activities')">الأنشطة</button>
-            <button class="btn btn-primary" onclick="switchTab('notes')">ملاحظة سريعة</button>
-            <button class="btn btn-ghost" onclick="switchTab('grades')">التقييم</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  setHtml('todayClassContainer', html);
-};
-
-
-// ===== DASHBOARD OVERRIDE =====
-UI.renderDashboardBase = UI.renderDashboard;
-UI.renderDashboard = async function() {
-  await UI.renderDashboardBase();
-
-  const dashboardTab = document.getElementById('tab-dashboard');
-  if (!dashboardTab) return;
-
-  let board = document.getElementById('morningDecisionMount');
-  if (!board) {
-    board = document.createElement('div');
-    board.id = 'morningDecisionMount';
-    dashboardTab.prepend(board);
-  }
-
-  board.innerHTML = await UI.renderMorningDecisionBoard();
-
-  const pupils = PupilMgr.getPupilNames();
-  const rows = [];
-
-  for (const p of pupils) {
-    const support = await Engine.getSmartSupportIndex(p);
-    const trend = await Engine.getStudentTrend(p);
-    rows.push({ name: p, support, trend });
-  }
-
-  let smartWrap = document.getElementById('smartSupportMount');
-  if (!smartWrap) {
-    smartWrap = document.createElement('div');
-    smartWrap.id = 'smartSupportMount';
-    dashboardTab.appendChild(smartWrap);
-  }
-
-  smartWrap.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title"><div class="icon">🧠</div>مؤشر الدعم الذكي وتتبع التحسن</div>
-        <button class="btn btn-primary btn-sm" onclick="UI.generateWeeklyClassReport()">🖨️ التقرير الأسبوعي الآلي</button>
-      </div>
-      <div class="card-body">
-        <table>
-          <thead>
-            <tr>
-              <th>الاسم</th>
-              <th class="td-center">مؤشر الدعم</th>
-              <th class="td-center">الحالة</th>
-              <th class="td-center">التحسن</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(x => `
-              <tr>
-                <td><strong style="cursor:pointer;color:var(--brand-600)" onclick="UI.openProfile('${x.name}')">${x.name}</strong></td>
-                <td class="td-center" style="font-weight:900;color:${x.support.color}">${x.support.score.toFixed(0)}</td>
-                <td class="td-center"><span class="badge" style="background:color-mix(in srgb, ${x.support.color} 12%, white);color:${x.support.color}">${x.support.label}</span></td>
-                <td class="td-center" style="font-weight:900;color:${x.trend.color}">${x.trend.label}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-};
-</script>
 </body>
 </html>
