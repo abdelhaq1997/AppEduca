@@ -113,7 +113,6 @@
   .modal-body{
     padding:14px !important;
   }
-  State._refreshing = null;
 }
 
 /* ===== PRINT FIX ===== */
@@ -696,6 +695,23 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
 .journal-help-note{font-size:10.5px;color:var(--text-3);font-weight:700;margin-top:4px}
 @media (max-width:900px){.journal-day-actions{width:100%}.journal-day-actions .btn-outline-mini{flex:1 1 auto}}
 
+
+
+/* ─── QUICK ACTIONS ─── */
+#quickFab{position:fixed;left:18px;bottom:18px;z-index:950;width:58px;height:58px;border:none;border-radius:50%;background:linear-gradient(135deg,var(--brand-600),var(--brand-400));color:#fff;font-size:28px;font-weight:900;box-shadow:0 12px 28px rgba(79,70,229,.35);cursor:pointer}
+#quickActionsMenu{position:fixed;left:18px;bottom:86px;z-index:949;display:none;flex-direction:column;gap:8px}
+#quickActionsMenu.open{display:flex}
+.quick-action-btn{min-width:150px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-1);padding:10px 12px;border-radius:14px;box-shadow:var(--shadow-md);font:900 12px Tajawal,sans-serif;cursor:pointer}
+.quick-action-btn:hover{border-color:var(--brand-400);background:rgba(99,102,241,.06)}
+
+/* ─── TOOLS TAB LAYOUT ─── */
+.tools-main-stack{display:flex;flex-direction:column;gap:16px}
+.tools-wheel-card .card-body{padding:22px}
+.tools-wheel-stage{max-width:560px}
+.tools-wheel-stage canvas{display:block;width:100%;height:auto;max-width:560px;margin:0 auto;border-radius:50%;box-shadow:var(--shadow-lg)}
+.tools-wheel-stack .flex-row{gap:10px}
+.tools-groups-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:900px){.tools-groups-wrap{grid-template-columns:1fr}.tools-wheel-stage{max-width:420px}.tools-wheel-stage canvas{max-width:420px}}
 </style>
 </head>
 <body>
@@ -1088,27 +1104,28 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
         <div class="flex-row mb-12">
           <button class="btn btn-primary no-print" onclick="toggleClassroomMode()" id="enterClassroomBtn">🔲 وضع السبورة (ملء الشاشة)</button>
           <button class="btn btn-danger no-print" onclick="removeClassroomMode()" id="exitClassroomBtnInner" style="display:none">❌ خروج من وضع الحصة</button>
+          <button class="btn btn-info no-print" onclick="printWeeklySummary()">📑 طباعة تقرير أسبوعي</button>
         </div>
 
-        <div class="g2">
-          <div class="card">
+        <div class="tools-main-stack">
+          <div class="card tools-wheel-card">
             <div class="card-header">
-              <div class="card-title"><div class="icon">🎲</div>العجلة</div>
+              <div class="card-title"><div class="icon">🎲</div>العجلة العشوائية</div>
               <button class="btn btn-ghost btn-sm no-print tab-print-btn" onclick="printCurrentTab()">🖨️ طباعة</button>
             </div>
             <div class="card-body tools-wheel-stack">
               <div class="tools-wheel-stage">
                 <div class="wheel-arrow">👇</div>
-                <canvas id="wheelCanvas" width="420" height="420"></canvas>
+                <canvas id="wheelCanvas" width="560" height="560"></canvas>
               </div>
               <div class="flex-row" style="justify-content:center">
                 <button class="btn btn-primary" onclick="UI.spinWheel()">🎯 اختر</button>
                 <button class="btn btn-ghost btn-sm" onclick="UI.resetWheel()">🔄 إعادة الجميع</button>
               </div>
-              <div id="wheelWinner" style="font-size:24px;font-weight:900;min-height:38px"></div>
+              <div id="wheelWinner" style="font-size:26px;font-weight:900;min-height:42px"></div>
 
-              <div class="timer-inline" style="max-width:280px;margin:10px auto 0">
-                <div style="font-size:12px;color:var(--text-3);font-weight:800;margin-bottom:6px">مؤقت سريع</div>
+              <div class="timer-inline" style="max-width:240px;margin:8px auto 0">
+                <div style="font-size:11px;color:var(--text-3);font-weight:800;margin-bottom:6px">مؤقت سريع</div>
                 <div id="timerDisplay">00:00</div>
                 <div class="timer-actions">
                   <button class="btn btn-success btn-sm" onclick="UI.startTimer(30)">30ث</button>
@@ -1123,7 +1140,7 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
           <div class="card">
             <div class="card-header"><div class="card-title"><div class="icon">👥</div>المجموعات</div></div>
             <div class="card-body">
-              <div class="tools-panels-grid">
+              <div class="tools-groups-wrap">
                 <div class="tool-panel">
                   <div class="tool-panel-head">تشكيل المجموعات</div>
                   <div class="flex-row mb-12">
@@ -1150,16 +1167,6 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><div class="card-title"><div class="icon">🛠️</div>أدوات الصف</div></div>
-            <div class="card-body flex-row">
-              <button class="btn btn-outline btn-sm" onclick="UI.resetWheel()">إعادة ضبط العجلة</button>
-              <button class="btn btn-outline btn-sm" onclick="toggleClassroomMode()">وضع السبورة</button>
-              <button class="btn btn-outline btn-sm" onclick="removeClassroomMode()">الخروج من وضع السبورة</button>
-              <button class="btn btn-outline btn-sm" onclick="printCurrentTab()">طباعة تبويب الأدوات</button>
             </div>
           </div>
         </div>
@@ -2329,7 +2336,11 @@ const State = {
   charts: {}, wheelList: [], timerInt: null,
   today: new Date().toISOString().split('T')[0],
   currentProfile: '',
-  isSp: false, wA: 0
+  isSp: false, wA: 0,
+  _refreshing: null,
+  _dataVersion: 1,
+  _tabStamp: {},
+  quickActionsOpen: false
 };
 
 // UUID generator
@@ -2374,6 +2385,8 @@ const DB = {
   },
   async set(type, data) {
     await Store.set(this._k(type), data);
+    State._dataVersion = (State._dataVersion || 1) + 1;
+    State._tabStamp = {};
     Engine.checkAlerts();
   },
   async getFluency(s, w) {
@@ -2381,6 +2394,8 @@ const DB = {
   },
   async setFluency(s, w, data) {
     await Store.set(`${this._k('flu')}_S${s}_W${w}`, data);
+    State._dataVersion = (State._dataVersion || 1) + 1;
+    State._tabStamp = {};
   },
   async addNote() {
     const st = getVal('note-student'), ty = getVal('note-type'), tx = getVal('note-text');
@@ -3801,18 +3816,27 @@ const UI = {
       ctx.save(); ctx.translate(cx, cx); ctx.rotate(a + arc / 2); ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = 'bold 13px Cairo'; ctx.fillText(n.split(' ').slice(0, 2).join(' '), r - 12, 5); ctx.restore();
     });
   },
-  resetWheel() { State.wheelList = [...PupilMgr.getPupilNames()]; setTxt('wheelWinner', ''); this.drawWheel(); },
+  resetWheel() { State.wheelList = [...PupilMgr.getPupilNames()]; State.wA = 0; setTxt('wheelWinner', ''); this.drawWheel(0); },
 
   // ─── TIMER ─────────────────────────────
   startTimer(sec) {
-    clearInterval(State.timerInt); let t = sec;
+    clearInterval(State.timerInt);
+    let t = sec;
     const el = document.getElementById('timerDisplay'); if (!el) return;
-    State.timerInt = setInterval(() => {
-      const m = Math.floor(t / 60), s = t % 60;
+    const paint = () => {
+      const m = Math.floor(Math.max(t,0) / 60), s = Math.max(t,0) % 60;
       setTxt('timerDisplay', `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
-      el.className = t <= 10 ? 'urgent' : '';
-      if (t <= 0) { clearInterval(State.timerInt); setTxt('timerDisplay', 'انتهى!'); }
+      el.className = t <= 10 && t > 0 ? 'urgent' : '';
+    };
+    paint();
+    State.timerInt = setInterval(() => {
       t--;
+      paint();
+      if (t <= 0) {
+        clearInterval(State.timerInt);
+        setTxt('timerDisplay', 'انتهى!');
+        el.className = '';
+      }
     }, 1000);
   },
   stopTimer() { clearInterval(State.timerInt); setTxt('timerDisplay', '00:00'); const el = document.getElementById('timerDisplay'); if (el) el.className = ''; },
@@ -4354,6 +4378,16 @@ const ClassAnalysis = {
     </table>
     <script>window.onload=()=>{setTimeout(()=>window.print(),600)}<\/script>
     
+
+
+<!-- QUICK ACTIONS -->
+<button id="quickFab" class="no-print" onclick="UI.toggleQuickActions()">＋</button>
+<div id="quickActionsMenu" class="no-print">
+  <button class="quick-action-btn" onclick="UI.quickGo('attendance')">📅 تسجيل غياب</button>
+  <button class="quick-action-btn" onclick="UI.quickGo('notes')">📋 إضافة ملاحظة</button>
+  <button class="quick-action-btn" onclick="UI.quickGo('grades')">💯 إدخال نقطة</button>
+  <button class="quick-action-btn" onclick="UI.quickGo('homework')">📝 واجب منزلي</button>
+</div>
 
 </body></html>`);
     w.document.close();
@@ -4917,9 +4951,11 @@ async function switchTab(tabId) {
   await refreshCurrentTab(tabId);
 }
 
-async function refreshCurrentTab(tabId) {
+async function refreshCurrentTab(tabId, force = false) {
   const t = tabId || State.tab;
   if (State._refreshing === t) return;
+  const stamp = `${State.year}|${State.level}|${State._dataVersion}`;
+  if (!force && State._tabStamp && State._tabStamp[t] === stamp && t !== 'tools') return;
   State._refreshing = t;
   try {
     switch (t) {
@@ -4941,8 +4977,12 @@ async function refreshCurrentTab(tabId) {
       case 'class-analysis': await ClassAnalysis.render(); break;
       case 'parent-report': ParentReport.initSelect(); break;
       case 'today-class': await UI.renderTodayClass(); break;
-      case 'tools': UI.resetWheel(); break;
+      case 'tools':
+        if (!Array.isArray(State.wheelList) || !State.wheelList.length) UI.resetWheel();
+        else UI.drawWheel(State.wA || 0);
+        break;
     }
+    State._tabStamp[t] = stamp;
   } finally {
     State._refreshing = null;
   }
@@ -4952,8 +4992,8 @@ function toggleSidebar() {
   s.classList.toggle('active'); o.classList.toggle('active');
 }
 
-function changeYear(y) { State.year = y; Engine.invalidate(); initDropdowns(); refreshCurrentTab(); }
-function changeLevel(l) { State.level = l; Engine.invalidate(); initDropdowns(); refreshCurrentTab(); }
+function changeYear(y) { if (State.year === y) return; State.year = y; State._dataVersion++; State._tabStamp = {}; Engine.invalidate(); initDropdowns(); refreshCurrentTab(State.tab, true); }
+function changeLevel(l) { if (State.level === l) return; State.level = l; State._dataVersion++; State._tabStamp = {}; Engine.invalidate(); initDropdowns(); refreshCurrentTab(State.tab, true); }
 
 function handleGlobalSearch(input) {
   const name = input.value;
@@ -5045,65 +5085,122 @@ async function printFluencyAllWeeks() {
 }
 
 
-function printCurrentTab(){
-  const tab = State.tab;
 
-  document.body.classList.remove(
-    "print-mode-report",
-    "print-mode-cert",
-    "print-section",
-    "print-report-editor",
-    "print-fluency-all"
-  );
+function printCurrentTab() {
+  const activeTab = document.querySelector('.tab-content.active');
+  if (!activeTab) return;
 
-  if(tab === "attendance"){
-    UI.renderAttendance();
-    document.body.classList.add("print-section");
-  }
+  const oldTitle = document.title;
+  const title = (document.getElementById('tabTitle')?.textContent || 'طباعة').trim();
+  const level = State?.level || '';
+  const year = State?.year || '';
+  const today = new Date().toLocaleDateString('ar-MA');
 
-  else if(tab === "fluency"){
-    UI.renderFluency();
-    document.body.classList.add("print-fluency-all");
-  }
+  document.querySelectorAll('.print-header').forEach(el => el.remove());
+  const header = document.createElement('div');
+  header.className = 'print-header';
+  header.innerHTML = `
+    <h1 style="font:900 22px Cairo,sans-serif;margin:0 0 8px">${title}</h1>
+    <div style="font-size:12px;color:#444">التاريخ: ${today} | المستوى: ${level} | السنة: ${year}</div>
+  `;
+  activeTab.prepend(header);
 
-  else if(tab === "grades"){
-    UI.renderGrades();
-    document.body.classList.add("print-section");
-  }
-
-  else if(tab === "sessions"){
-    UI.renderSessions();
-    document.body.classList.add("print-section");
-  }
-
-  else if(tab === "reports"){
-    UI.renderReports();
-    document.body.classList.add("print-mode-report");
-  }
-
-  else if(tab === "report-editor"){
-    document.body.classList.add("print-report-editor");
-  }
-
-  else{
-    document.body.classList.add("print-section");
-  }
-
-  setTimeout(()=>{
-    window.print();
-
-    setTimeout(()=>{
-      document.body.classList.remove(
-        "print-mode-report",
-        "print-mode-cert",
-        "print-section",
-        "print-report-editor",
-        "print-fluency-all"
-      );
-    },500);
-
-  },300);
+  document.title = title;
+  window.print();
+  setTimeout(() => {
+    header.remove();
+    document.title = oldTitle;
+  }, 300);
 }
+
+UI.toggleQuickActions = function(){
+  const menu = document.getElementById('quickActionsMenu');
+  if (!menu) return;
+  State.quickActionsOpen = !State.quickActionsOpen;
+  menu.classList.toggle('open', State.quickActionsOpen);
+};
+
+UI.quickGo = async function(tabId){
+  State.quickActionsOpen = false;
+  document.getElementById('quickActionsMenu')?.classList.remove('open');
+  await switchTab(tabId);
+};
+
+async function printWeeklySummary() {
+  const year = State.year, level = State.level;
+  const teacher = await Store.get('setting_teacher', 'ذ. عبد الحق جعايط');
+  const school = await Store.get('setting_school', 'م/م المصامدة');
+  const pupils = PupilMgr.getPupilNames();
+
+  const attendance = await DB.get('attendance');
+  const homework = await DB.get('homework');
+  const grades = await DB.get('grades');
+  const notes = await DB.get('notes');
+
+  const gradeRows = pupils.map(name => {
+    const g = grades[name] || [];
+    const nums = g.map(v => +v).filter(v => !Number.isNaN(v));
+    const avg = nums.length ? (nums.reduce((a,b)=>a+b,0) / nums.length).toFixed(1) : '—';
+    return `<tr><td>${name}</td><td>${avg}</td></tr>`;
+  }).join('');
+
+  const attRows = pupils.map(name => {
+    let absent = 0, late = 0;
+    Object.values(attendance || {}).forEach(day => {
+      const st = day?.[name];
+      if (st === 'absent') absent++;
+      if (st === 'late') late++;
+    });
+    return `<tr><td>${name}</td><td>${absent}</td><td>${late}</td></tr>`;
+  }).join('');
+
+  const hwRows = pupils.map(name => {
+    let done = 0, missing = 0;
+    Object.values(homework || {}).forEach(day => {
+      const st = day?.[name];
+      if (st === 'done') done++;
+      if (st === 'missing') missing++;
+    });
+    return `<tr><td>${name}</td><td>${done}</td><td>${missing}</td></tr>`;
+  }).join('');
+
+  const noteRows = (notes || []).slice(0, 12).map(n =>
+    `<tr><td>${n.student || '—'}</td><td>${n.type || '—'}</td><td>${n.text || '—'}</td><td>${n.date || '—'}</td></tr>`
+  ).join('') || '<tr><td colspan="4">لا توجد ملاحظات</td></tr>';
+
+  const html = `
+    <html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير أسبوعي</title>
+    <style>
+      body{font-family:Tajawal,Arial,sans-serif;direction:rtl;padding:24px;color:#0f172a}
+      h1,h2{font-family:Cairo,Tajawal,sans-serif;margin:0 0 10px;color:#312e81}
+      .block{margin-bottom:22px}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th,td{border:1px solid #cbd5e1;padding:6px 8px;text-align:right}
+      th{background:#f8fafc}
+    </style></head><body>
+      ${buildPrintHeader('التقرير الأسبوعي للقسم', teacher, school, year, level)}
+      <div class="block"><h2>الفروض</h2><table><thead><tr><th>الاسم</th><th>المعدل</th></tr></thead><tbody>${gradeRows}</tbody></table></div>
+      <div class="block"><h2>الغياب والتأخر</h2><table><thead><tr><th>الاسم</th><th>عدد الغياب</th><th>عدد التأخر</th></tr></thead><tbody>${attRows}</tbody></table></div>
+      <div class="block"><h2>الواجبات المنزلية</h2><table><thead><tr><th>الاسم</th><th>منجز</th><th>غير منجز</th></tr></thead><tbody>${hwRows}</tbody></table></div>
+      <div class="block"><h2>آخر الملاحظات</h2><table><thead><tr><th>الاسم</th><th>النوع</th><th>الملاحظة</th><th>التاريخ</th></tr></thead><tbody>${noteRows}</tbody></table></div>
+    </body></html>
+  `;
+  const win = window.open('', '', 'width=1000,height=750');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('quickActionsMenu');
+  const fab = document.getElementById('quickFab');
+  if (!menu || !fab) return;
+  if (!menu.contains(e.target) && !fab.contains(e.target)) {
+    State.quickActionsOpen = false;
+    menu.classList.remove('open');
+  }
+});
 
 
 async function printClassReportUI() {
@@ -5544,25 +5641,7 @@ window.addEventListener('load', async () => {
       }
       const teacher = await Store.get('setting_teacher', 'الأستاذ');
       const school = await Store.get('setting_school', 'المدرسة');
-      const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم المتعثرين</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:980px;margin:auto}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.muted{color:#666;font-size:12px}
-@media print{
-  .tab-container{
-    overflow:visible !important;
-  }
-
-  table{
-    page-break-inside:auto;
-  }
-
-  tr{
-    page-break-inside:avoid;
-  }
-
-  canvas{
-    max-width:100% !important;
-  }
-}
-</style>
+      const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم المتعثرين</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:980px;margin:auto}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.muted{color:#666;font-size:12px}</style>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
