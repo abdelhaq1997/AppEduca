@@ -4759,20 +4759,16 @@ const ClassAnalysis = {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -4870,9 +4866,8 @@ const ClassAnalysis = {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -5184,20 +5179,16 @@ const ParentReport = {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -5295,9 +5286,8 @@ const ParentReport = {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -5696,20 +5686,16 @@ const Journal = {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -5807,9 +5793,8 @@ const Journal = {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -5922,20 +5907,16 @@ const Journal = {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -6033,9 +6014,8 @@ const Journal = {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -6449,20 +6429,16 @@ async function printWeeklySummary() {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -6560,9 +6536,8 @@ async function printWeeklySummary() {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -7107,20 +7082,16 @@ window.addEventListener('load', async () => {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -7218,9 +7189,8 @@ window.addEventListener('load', async () => {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -7337,20 +7307,16 @@ window.addEventListener('load', async () => {
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -7448,9 +7414,8 @@ window.addEventListener('load', async () => {
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
@@ -7711,20 +7676,16 @@ setTimeout(updateMobileShell, 300);
 
   async function restoreSnapshot(payload){
     if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
-    try {
-      const loc = payload.localStorage || {};
-      Object.keys(loc).forEach(k => {
-        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
-        localStorage.setItem(k, loc[k]);
-      });
-      const lfd = payload.localforage || {};
-      if (window.localforage && localforage.setItem) {
-        for (const [k,v] of Object.entries(lfd)) {
-          await localforage.setItem(k, v);
-        }
+    const loc = payload.localStorage || {};
+    Object.keys(loc).forEach(k => {
+      if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+      localStorage.setItem(k, loc[k]);
+    });
+    const lfd = payload.localforage || {};
+    if (window.localforage && localforage.setItem) {
+      for (const [k,v] of Object.entries(lfd)) {
+        await localforage.setItem(k, v);
       }
-    } catch (e) {
-      throw e;
     }
   }
 
@@ -7822,9 +7783,8 @@ setTimeout(updateMobileShell, 300);
       $('sbPullBtn')?.addEventListener('click', pullCloud);
       $('sbTestBtn')?.addEventListener('click', testConn);
       initClient();
-      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
-    } catch(e) {
-      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    } catch (e) {
+      console.error('Supabase panel bootstrap failed', e);
     }
   });
 })();
