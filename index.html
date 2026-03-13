@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1e1b4b">
 <title>منصة الأداء التربوي v10.0 · ذ. عبد الحق جعايط</title>
 <link rel="manifest" href="./manifest.webmanifest">
@@ -112,6 +112,266 @@
 
   .modal-body{
     padding:14px !important;
+  }
+
+  .app-header{
+    position:sticky;
+    top:0;
+    z-index:120;
+    padding-top:max(10px, env(safe-area-inset-top));
+  }
+
+  .tab-container{
+    padding:12px 12px calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .mobile-bottom-nav{
+    display:grid !important;
+    grid-template-columns:repeat(5,1fr);
+    position:fixed;
+    right:0;
+    left:0;
+    bottom:0;
+    z-index:1200;
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(10px);
+    border-top:1px solid rgba(0,0,0,.08);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+    box-shadow:0 -8px 30px rgba(15,23,42,.10);
+  }
+
+  .mobile-bottom-nav .mb-item{
+    border:none;
+    background:transparent;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    min-height:54px;
+    border-radius:14px;
+    color:var(--text-2);
+    font-size:11px;
+    font-weight:800;
+    padding:6px 2px;
+  }
+
+  .mobile-bottom-nav .mb-item .mb-icon{font-size:18px;line-height:1}
+  .mobile-bottom-nav .mb-item.active{background:rgba(79,70,229,.10);color:var(--primary)}
+
+  .tools-wheel-card .wheel-mobile-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .wheel-mobile-close{display:none !important}
+
+  body.wheel-mobile-focus{overflow:hidden !important}
+  body.wheel-mobile-focus .app-header,
+  body.wheel-mobile-focus .mobile-bottom-nav,
+  body.wheel-mobile-focus #smartAlertsContainer{display:none !important}
+  body.wheel-mobile-focus #tab-tools .tools-main-stack > :not(.tools-wheel-card){display:none !important}
+  body.wheel-mobile-focus #tab-tools .tools-wheel-card{
+    position:fixed !important;
+    inset:0;
+    z-index:1400;
+    margin:0;
+    border-radius:0 !important;
+    width:100vw;
+    height:100dvh;
+    overflow:auto;
+  }
+  body.wheel-mobile-focus #tab-tools .tools-wheel-card .card-header{
+    position:sticky;
+    top:0;
+    z-index:2;
+    background:var(--surface);
+    padding-top:max(14px, env(safe-area-inset-top));
+  }
+  body.wheel-mobile-focus #tab-tools .tools-wheel-card .card-body{
+    min-height:calc(100dvh - 72px);
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:20px 14px calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+  body.wheel-mobile-focus #tab-tools .tools-wheel-stage,
+  body.wheel-mobile-focus #tab-tools .tools-wheel-stage canvas{max-width:min(92vw,92vh) !important}
+  body.wheel-mobile-focus .wheel-mobile-close{display:inline-flex !important}
+}
+
+.mobile-bottom-nav{display:none}
+
+
+/* ===== ANDROID-LIKE MOBILE ENHANCEMENTS ===== */
+:root{
+  --mobile-nav-h:72px;
+}
+.mobile-fab-menu,.mobile-home-strip{display:none}
+
+@media (max-width:768px){
+  body{
+    background:linear-gradient(180deg,#eef2ff 0%, #f8fafc 140px, var(--bg) 320px) !important;
+  }
+
+  .main-content{padding-bottom:calc(var(--mobile-nav-h) + 18px)}
+
+  .app-header{
+    background:rgba(255,255,255,.82) !important;
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(99,102,241,.10);
+    margin:0;
+  }
+
+  .header-title{
+    text-align:center;
+    font-size:16px !important;
+    font-weight:900 !important;
+  }
+
+  .global-search input,
+  .ctrl-group select,
+  .form-control,
+  input,
+  select,
+  textarea{
+    min-height:46px !important;
+    border-radius:14px !important;
+  }
+
+  .btn,
+  button{
+    min-height:44px;
+    border-radius:14px !important;
+  }
+
+  .card{
+    border-radius:20px !important;
+    box-shadow:0 10px 28px rgba(15,23,42,.06) !important;
+    border:1px solid rgba(99,102,241,.08) !important;
+    overflow:hidden;
+  }
+
+  .card-header{
+    padding:14px 14px 10px !important;
+  }
+
+  .mobile-home-strip{
+    display:flex !important;
+    gap:10px;
+    overflow:auto;
+    padding:4px 2px 10px;
+    scroll-snap-type:x proximity;
+  }
+
+  .mobile-home-chip{
+    scroll-snap-align:start;
+    flex:0 0 auto;
+    min-width:110px;
+    border:none;
+    border-radius:18px;
+    padding:12px 12px;
+    background:linear-gradient(135deg, rgba(79,70,229,.12), rgba(14,165,233,.12));
+    color:var(--text-1);
+    text-align:right;
+    box-shadow:0 8px 20px rgba(79,70,229,.10);
+  }
+  .mobile-home-chip b{display:block;font-size:12px;margin-bottom:4px}
+  .mobile-home-chip span{font-size:11px;color:var(--text-3)}
+
+  .mobile-fab-menu{
+    display:flex !important;
+    position:fixed;
+    left:14px;
+    bottom:calc(var(--mobile-nav-h) + 14px + env(safe-area-inset-bottom));
+    z-index:1220;
+    width:54px;
+    height:54px;
+    align-items:center;
+    justify-content:center;
+    border:none;
+    border-radius:999px;
+    background:linear-gradient(135deg,#4f46e5,#0ea5e9);
+    color:#fff;
+    box-shadow:0 16px 34px rgba(79,70,229,.30);
+    font-size:22px;
+  }
+
+  .mobile-bottom-nav{
+    min-height:var(--mobile-nav-h);
+  }
+
+  .mobile-bottom-nav .mb-item{
+    position:relative;
+    transition:.2s ease;
+  }
+
+  .mobile-bottom-nav .mb-item.active{
+    transform:translateY(-2px);
+    box-shadow:inset 0 0 0 1px rgba(79,70,229,.08);
+  }
+
+  .mobile-bottom-nav .mb-item.active::before{
+    content:'';
+    position:absolute;
+    top:-8px;
+    right:50%;
+    transform:translateX(50%);
+    width:28px;
+    height:4px;
+    border-radius:999px;
+    background:var(--primary);
+  }
+
+  #tab-tools .tools-wheel-card .card-body{
+    padding-bottom:20px !important;
+  }
+
+  .mobile-stack-table table,
+  .stack-on-mobile table{
+    min-width:100% !important;
+    white-space:normal !important;
+  }
+
+  .mobile-stack-table thead,
+  .stack-on-mobile thead{
+    display:none !important;
+  }
+
+  .mobile-stack-table table,
+  .mobile-stack-table tbody,
+  .mobile-stack-table tr,
+  .mobile-stack-table td,
+  .stack-on-mobile table,
+  .stack-on-mobile tbody,
+  .stack-on-mobile tr,
+  .stack-on-mobile td{
+    display:block;
+    width:100%;
+  }
+
+  .mobile-stack-table tr,
+  .stack-on-mobile tr{
+    background:#fff;
+    margin:0 0 10px;
+    padding:10px;
+    border:1px solid rgba(99,102,241,.10);
+    border-radius:16px;
+    box-shadow:0 8px 22px rgba(15,23,42,.04);
+  }
+
+  .mobile-stack-table td,
+  .stack-on-mobile td{
+    min-width:0 !important;
+    border:none !important;
+    padding:7px 6px !important;
+    text-align:right !important;
+  }
+
+  .mobile-stack-table td::before,
+  .stack-on-mobile td::before{
+    content:attr(data-label);
+    display:block;
+    font-size:11px;
+    font-weight:800;
+    color:var(--text-3);
+    margin-bottom:2px;
   }
 }
 
@@ -821,6 +1081,13 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       <button class="btn btn-primary btn-sm no-print" onclick="printCurrentTab()">🖨️ طباعة</button>
     </header>
     <div id="smartAlertsContainer" class="no-print"></div>
+    <div class="mobile-home-strip no-print" id="mobileHomeStrip">
+      <button class="mobile-home-chip" type="button" onclick="switchTab('dashboard')"><b>📊 الرئيسية</b><span>نظرة سريعة</span></button>
+      <button class="mobile-home-chip" type="button" onclick="switchTab('today-class')"><b>🎯 حصة اليوم</b><span>الخطة اليومية</span></button>
+      <button class="mobile-home-chip" type="button" onclick="switchTab('attendance')"><b>📅 الغياب</b><span>تسجيل سريع</span></button>
+      <button class="mobile-home-chip" type="button" onclick="switchTab('tools')"><b>🛠️ الأدوات</b><span>العجلة والمجموعات</span></button>
+      <button class="mobile-home-chip" type="button" onclick="switchTab('reports')"><b>📑 التقارير</b><span>طباعة ومتابعة</span></button>
+    </div>
 
     <div class="tab-container" id="tabContainer">
 
@@ -1111,7 +1378,7 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
           <div class="card tools-wheel-card">
             <div class="card-header">
               <div class="card-title"><div class="icon">🎲</div>العجلة العشوائية</div>
-              <button class="btn btn-ghost btn-sm no-print tab-print-btn" onclick="printCurrentTab()">🖨️ طباعة</button>
+              <div class="wheel-mobile-actions"><button class="btn btn-ghost btn-sm no-print tab-print-btn" onclick="printCurrentTab()">🖨️ طباعة</button><button class="btn btn-ghost btn-sm" type="button" onclick="toggleWheelFocus()">⤢ تكبير</button><button class="btn btn-danger btn-sm wheel-mobile-close" type="button" onclick="toggleWheelFocus(false)">✕ إغلاق</button></div>
             </div>
             <div class="card-body tools-wheel-stack">
               <div class="tools-wheel-stage">
@@ -1473,6 +1740,15 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       </section>
 
     </div><!-- end tab-container -->
+
+    <button class="mobile-fab-menu no-print" id="mobileFabMenu" type="button" onclick="toggleSidebar()" aria-label="فتح القائمة">☰</button>
+    <nav class="mobile-bottom-nav no-print" id="mobileBottomNav">
+      <button class="mb-item active" id="mb-dashboard" type="button" onclick="switchTab('dashboard')"><span class="mb-icon">📊</span><span>الرئيسية</span></button>
+      <button class="mb-item" id="mb-attendance" type="button" onclick="switchTab('attendance')"><span class="mb-icon">📅</span><span>الغياب</span></button>
+      <button class="mb-item" id="mb-tools" type="button" onclick="switchTab('tools')"><span class="mb-icon">🛠️</span><span>الأدوات</span></button>
+      <button class="mb-item" id="mb-reports" type="button" onclick="switchTab('reports')"><span class="mb-icon">📑</span><span>التقارير</span></button>
+      <button class="mb-item" id="mb-settings" type="button" onclick="switchTab('settings')"><span class="mb-icon">⚙️</span><span>الإعدادات</span></button>
+    </nav>
   </main>
 </div><!-- end app-layout -->
 
@@ -4389,6 +4665,219 @@ const ClassAnalysis = {
   <button class="quick-action-btn" onclick="UI.quickGo('homework')">📝 واجب منزلي</button>
 </div>
 
+
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
+
 </body></html>`);
     w.document.close();
   }
@@ -4600,6 +5089,219 @@ const ParentReport = {
 @media (max-width:900px){.journal-day-actions{width:100%}.journal-day-actions .btn-outline-mini{flex:1 1 auto}}
 
 </style></head><body>${content.outerHTML}
+
+
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
 
 </body></html>`);
     w.document.close(); w.focus(); setTimeout(()=>w.print(),800);
@@ -4900,6 +5602,219 @@ const Journal = {
       @page{size:A4;margin:10mm} body{font-family:'Tajawal',Arial,sans-serif;color:#111;margin:0} .page{display:flex;flex-direction:column;gap:12px;height:100%} .head{border:1px solid #222;padding:10px 12px;margin-bottom:8px} .head h1{font-size:18px;margin:0 0 6px} .meta{display:flex;justify-content:space-between;gap:12px;font-size:12px;flex-wrap:wrap} .print-half{border:1px solid #222;padding:8px 8px 10px;min-height:46vh} .print-half-title{font-size:14px;font-weight:700;margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:4px} .print-table{width:100%;border-collapse:collapse;font-size:11px} .print-table th,.print-table td{border:1px solid #444;padding:6px;vertical-align:top} .teacher-box{margin-top:8px;border:1px solid #444;padding:8px;font-size:11px;min-height:48px;white-space:pre-wrap} .divider{font-size:12px;font-weight:700;text-align:center;border:1px dashed #666;padding:4px;margin:4px 0}
     </style></head><body><div class="page"><div class="head"><h1>المذكرة التربوية اليومية</h1><div class="meta"><div>اليوم: ${day}</div><div>التاريخ: ${dateLabel}</div><div>${this.esc(week.label)}</div></div></div>${this.buildPrintableHalf('المستوى: الرابع', fourth, week.dayNotes?.[day] || '')}<div class="divider">فترة الاستراحة</div>${this.buildPrintableHalf('المستوى: الخامس والسادس', upper, week.dayNotes?.[day] || '')}</div><script>window.onload=function(){window.print();}<\/script>
 
+
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
+
 </body></html>`;
     const w = window.open('', '_blank'); w.document.write(html); w.document.close();
   },
@@ -4912,6 +5827,219 @@ const Journal = {
       return `<section style="page-break-after:always">${this.buildPrintableHalf(`${day} — المستوى: الرابع`, fourth, week.dayNotes?.[day] || '')}<div style="height:8px"></div>${this.buildPrintableHalf(`${day} — المستوى: الخامس والسادس`, upper, week.dayNotes?.[day] || '')}</section>`;
     }).join('');
     const blob = new Blob([`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>المذكرة_${data.currentWeekId}</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:20px}.print-half{border:1px solid #222;padding:8px 8px 10px;min-height:45vh}.print-half-title{font-size:14px;font-weight:700;margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:4px}.print-table{width:100%;border-collapse:collapse;font-size:11px}.print-table th,.print-table td{border:1px solid #444;padding:6px;vertical-align:top}.teacher-box{margin-top:8px;border:1px solid #444;padding:8px;font-size:11px;min-height:48px;white-space:pre-wrap}</style></head><body>${daysHtml}
+
+
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
 
 </body></html>`], { type:'text/html;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `المذكرة_${data.currentWeekId}.html`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
@@ -4937,19 +6065,63 @@ async function switchTab(tabId) {
   tabId = aliasTabs[tabId] || tabId;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.mobile-bottom-nav .mb-item').forEach(b => b.classList.remove('active'));
   const tab = document.getElementById('tab-' + tabId);
   const btn = document.getElementById('btn-' + tabId);
+  const mobileBtn = document.getElementById('mb-' + tabId);
   if (tab) tab.classList.add('active');
   if (btn) btn.classList.add('active');
+  if (mobileBtn) mobileBtn.classList.add('active');
   setTxt('tabTitle', TAB_TITLES[tabId] || tabId);
   State.tab = tabId;
-  
-  // Close mobile sidebar
+
+  if (tabId !== 'tools') document.body.classList.remove('wheel-mobile-focus');
+
   document.getElementById('appSidebar').classList.remove('active');
   document.getElementById('mobileOverlay').classList.remove('active');
-  
+
   await refreshCurrentTab(tabId);
+  updateMobileShell();
 }
+
+function toggleWheelFocus(force) {
+  if (window.innerWidth > 768) return;
+  const shouldOpen = typeof force === 'boolean' ? force : !document.body.classList.contains('wheel-mobile-focus');
+  if (shouldOpen && State.tab !== 'tools') switchTab('tools');
+  document.body.classList.toggle('wheel-mobile-focus', shouldOpen);
+  if (shouldOpen) setTimeout(() => UI.drawWheel(State.wA || 0), 60);
+}
+
+function enhanceTablesForMobile() {
+  if (window.innerWidth > 768) return;
+  document.querySelectorAll('.tab-content.active table').forEach(table => {
+    if (table.dataset.mobileEnhanced === '1') return;
+    const headers = [...table.querySelectorAll('thead th')].map(th => (th.textContent || '').trim());
+    if (!headers.length) return;
+    table.closest('.card, .table-wrap, .table-responsive, .tab-content, .modal-body')?.classList.add('mobile-stack-table');
+    table.querySelectorAll('tbody tr').forEach(tr => {
+      [...tr.children].forEach((td, i) => td.setAttribute('data-label', headers[i] || 'حقل'));
+    });
+    table.dataset.mobileEnhanced = '1';
+  });
+}
+
+function updateMobileShell() {
+  const isMobile = window.innerWidth <= 768;
+  const fab = document.getElementById('mobileFabMenu');
+  if (fab) fab.style.display = isMobile && !document.body.classList.contains('wheel-mobile-focus') ? 'flex' : 'none';
+  const strip = document.getElementById('mobileHomeStrip');
+  if (strip) strip.style.display = isMobile ? 'flex' : 'none';
+  enhanceTablesForMobile();
+}
+
+window.addEventListener('resize', updateMobileShell);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.body.classList.remove('wheel-mobile-focus');
+    updateMobileShell();
+  }
+});
 
 async function refreshCurrentTab(tabId, force = false) {
   const t = tabId || State.tab;
@@ -5183,7 +6355,220 @@ async function printWeeklySummary() {
       <div class="block"><h2>الغياب والتأخر</h2><table><thead><tr><th>الاسم</th><th>عدد الغياب</th><th>عدد التأخر</th></tr></thead><tbody>${attRows}</tbody></table></div>
       <div class="block"><h2>الواجبات المنزلية</h2><table><thead><tr><th>الاسم</th><th>منجز</th><th>غير منجز</th></tr></thead><tbody>${hwRows}</tbody></table></div>
       <div class="block"><h2>آخر الملاحظات</h2><table><thead><tr><th>الاسم</th><th>النوع</th><th>الملاحظة</th><th>التاريخ</th></tr></thead><tbody>${noteRows}</tbody></table></div>
-    </body></html>
+    
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
+
+</body></html>
   `;
   const win = window.open('', '', 'width=1000,height=750');
   if (!win) return;
@@ -5628,7 +7013,220 @@ window.addEventListener('load', async () => {
       const perf = await Engine.calculatePI(name, State.level);
       const teacher = await Store.get('setting_teacher', 'الأستاذ');
       const school = await Store.get('setting_school', 'المدرسة');
-      const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم ${name}</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:900px;margin:auto;color:#111}h1,h2{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.box{border:1px solid #ddd;border-radius:10px;padding:12px;margin:12px 0}.muted{color:#666;font-size:12px}</style></head><body><div style="border-bottom:3px double #4338ca;padding-bottom:12px;margin-bottom:16px"><h1 style="font-size:22px;color:#4338ca">تقرير دعم المتعلم</h1><div class="muted">${school} — ${State.year} — المستوى ${State.level} — ${teacher}</div></div><div class="box"><strong>اسم المتعلم:</strong> ${name}<br><strong>مؤشر الأداء:</strong> ${perf.pi.toFixed(2)}/10<br><strong>المعدل العام:</strong> ${perf.raw.gAvg.toFixed(2)}/10<br><strong>الغيابات:</strong> ${perf.raw.absCount}</div><h2 style="font-size:18px;margin-top:14px">خطة الدعم</h2>${rem.length ? `<table><thead><tr><th>التاريخ</th><th>المجال</th><th>الصعوبة</th><th>الخطة</th><th>الإجراءات</th><th>الحالة</th></tr></thead><tbody>${rem.map(r=>`<tr><td>${r.date||'—'}</td><td>${r.domain||'—'}</td><td>${r.type||'—'}</td><td>${r.plan||'—'}</td><td>${r.actions||'—'}</td><td>${r.status||'—'}</td></tr>`).join('')}</tbody></table>` : `<div class="box">لا توجد خطط دعم مسجلة.</div>`}<h2 style="font-size:18px;margin-top:18px">آخر الملاحظات</h2>${notes.length ? `<table><thead><tr><th>التاريخ</th><th>النوع</th><th>الملاحظة</th></tr></thead><tbody>${notes.slice(0,5).map(n=>`<tr><td>${n.date||'—'}</td><td>${n.type||'—'}</td><td>${n.text||'—'}</td></tr>`).join('')}</tbody></table>` : `<div class="box">لا توجد ملاحظات مسجلة.</div>`}<script>window.onload=function(){window.print();}<\/script></body></html>`;
+      const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم ${name}</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:900px;margin:auto;color:#111}h1,h2{margin:0}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.box{border:1px solid #ddd;border-radius:10px;padding:12px;margin:12px 0}.muted{color:#666;font-size:12px}</style></head><body><div style="border-bottom:3px double #4338ca;padding-bottom:12px;margin-bottom:16px"><h1 style="font-size:22px;color:#4338ca">تقرير دعم المتعلم</h1><div class="muted">${school} — ${State.year} — المستوى ${State.level} — ${teacher}</div></div><div class="box"><strong>اسم المتعلم:</strong> ${name}<br><strong>مؤشر الأداء:</strong> ${perf.pi.toFixed(2)}/10<br><strong>المعدل العام:</strong> ${perf.raw.gAvg.toFixed(2)}/10<br><strong>الغيابات:</strong> ${perf.raw.absCount}</div><h2 style="font-size:18px;margin-top:14px">خطة الدعم</h2>${rem.length ? `<table><thead><tr><th>التاريخ</th><th>المجال</th><th>الصعوبة</th><th>الخطة</th><th>الإجراءات</th><th>الحالة</th></tr></thead><tbody>${rem.map(r=>`<tr><td>${r.date||'—'}</td><td>${r.domain||'—'}</td><td>${r.type||'—'}</td><td>${r.plan||'—'}</td><td>${r.actions||'—'}</td><td>${r.status||'—'}</td></tr>`).join('')}</tbody></table>` : `<div class="box">لا توجد خطط دعم مسجلة.</div>`}<h2 style="font-size:18px;margin-top:18px">آخر الملاحظات</h2>${notes.length ? `<table><thead><tr><th>التاريخ</th><th>النوع</th><th>الملاحظة</th></tr></thead><tbody>${notes.slice(0,5).map(n=>`<tr><td>${n.date||'—'}</td><td>${n.type||'—'}</td><td>${n.text||'—'}</td></tr>`).join('')}</tbody></table>` : `<div class="box">لا توجد ملاحظات مسجلة.</div>`}<script>window.onload=function(){window.print();}<\/script>
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
+
+</body></html>`;
       const w = window.open('', '_blank'); w.document.write(html); w.document.close();
     },
     async printStrugglingReport(){
@@ -5642,11 +7240,223 @@ window.addEventListener('load', async () => {
       const teacher = await Store.get('setting_teacher', 'الأستاذ');
       const school = await Store.get('setting_school', 'المدرسة');
       const html = `<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>تقرير دعم المتعثرين</title><style>body{font-family:Tajawal,Arial,sans-serif;padding:24px;max-width:980px;margin:auto}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #ddd;padding:8px;text-align:right;font-size:13px}th{background:#f3f4f6}.muted{color:#666;font-size:12px}</style>
-<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <link rel="stylesheet" href="safe_ui_patch.css">
-</head><body><div style="border-bottom:3px double #4338ca;padding-bottom:12px;margin-bottom:16px"><h1 style="font-size:22px;color:#4338ca">تقرير دعم المتعثرين</h1><div class="muted">${school} — ${State.year} — المستوى ${State.level} — ${teacher}</div></div>${rows.length ? `<table><thead><tr><th>الاسم</th><th>PI</th><th>المعدل</th><th>الغيابات</th><th>حالة الدعم</th><th>آخر ملاحظة</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.name}</td><td>${r.pi}</td><td>${r.avg}</td><td>${r.abs}</td><td>${r.status}</td><td>${r.note}</td></tr>`).join('')}</tbody></table>` : '<p>لا توجد حالات دعم حالياً.</p>'}<script>window.onload=function(){window.print();}<\/script></body></html>`;
+</head><body><div style="border-bottom:3px double #4338ca;padding-bottom:12px;margin-bottom:16px"><h1 style="font-size:22px;color:#4338ca">تقرير دعم المتعثرين</h1><div class="muted">${school} — ${State.year} — المستوى ${State.level} — ${teacher}</div></div>${rows.length ? `<table><thead><tr><th>الاسم</th><th>PI</th><th>المعدل</th><th>الغيابات</th><th>حالة الدعم</th><th>آخر ملاحظة</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.name}</td><td>${r.pi}</td><td>${r.avg}</td><td>${r.abs}</td><td>${r.status}</td><td>${r.note}</td></tr>`).join('')}</tbody></table>` : '<p>لا توجد حالات دعم حالياً.</p>'}<script>window.onload=function(){window.print();}<\/script>
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
+
+</body></html>`;
       const w = window.open('', '_blank'); w.document.write(html); w.document.close();
     }
   };
@@ -5795,6 +7605,230 @@ document.getElementById('installApp').addEventListener('click', async () => {
     deferredPrompt = null;
 });
 </script>
-  <script src="./pwa.js"></script>
+<script src="./pwa.js"></script>
+<script>
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('wheel-mobile-focus')) toggleWheelFocus(false);
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) document.body.classList.remove('wheel-mobile-focus');
+});
+
+updateMobileShell();
+setTimeout(updateMobileShell, 300);
+</script>
+
+
+<!-- SAFE SUPABASE PANEL -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+#sbCloudFab{position:fixed;left:14px;bottom:88px;z-index:10001;border:none;border-radius:999px;background:#4338ca;color:#fff;width:52px;height:52px;font-size:22px;box-shadow:0 10px 24px rgba(0,0,0,.22);cursor:pointer}
+#sbCloudPanel{position:fixed;left:14px;bottom:150px;z-index:10001;width:min(92vw,360px);background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:18px;box-shadow:0 18px 48px rgba(0,0,0,.22);padding:14px;display:none;direction:rtl}
+#sbCloudPanel.open{display:block}
+#sbCloudPanel h3{margin:0 0 8px;font-size:15px}
+#sbCloudPanel .sb-row{display:flex;gap:8px;margin-top:8px}
+#sbCloudPanel input{width:100%;min-height:42px;border:1px solid #d4d4d8;border-radius:12px;padding:8px 10px;font-size:14px}
+#sbCloudPanel button{min-height:40px;border:none;border-radius:12px;padding:0 12px;cursor:pointer;font-size:13px}
+#sbCloudPanel .sb-primary{background:#4338ca;color:#fff}
+#sbCloudPanel .sb-muted{background:#f4f4f5;color:#111827}
+#sbCloudPanel .sb-danger{background:#b91c1c;color:#fff}
+#sbCloudStatus{font-size:12px;line-height:1.7;color:#374151;background:#f8fafc;border-radius:12px;padding:8px 10px;margin-top:8px;max-height:110px;overflow:auto}
+#sbCloudUser{font-size:12px;color:#111827;font-weight:700;margin-top:6px}
+@media (max-width:768px){#sbCloudFab{bottom:82px}#sbCloudPanel{left:10px;right:10px;width:auto;bottom:144px}}
+</style>
+<button id="sbCloudFab" type="button" aria-label="السحابة">☁️</button>
+<div id="sbCloudPanel" dir="rtl">
+  <h3>المزامنة السحابية</h3>
+  <div id="sbCloudUser">غير مسجل</div>
+  <div class="sb-row"><input id="sbEmail" type="email" placeholder="البريد الإلكتروني"></div>
+  <div class="sb-row"><input id="sbPassword" type="password" placeholder="كلمة المرور"></div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbLoginBtn" type="button">دخول</button>
+    <button class="sb-muted" id="sbSignupBtn" type="button">حساب جديد</button>
+    <button class="sb-danger" id="sbLogoutBtn" type="button">خروج</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-primary" id="sbPushBtn" type="button">رفع إلى السحابة</button>
+    <button class="sb-muted" id="sbPullBtn" type="button">استرجاع من السحابة</button>
+  </div>
+  <div class="sb-row">
+    <button class="sb-muted" id="sbTestBtn" type="button">اختبار الاتصال</button>
+  </div>
+  <div id="sbCloudStatus">جاهز</div>
+</div>
+<script>
+(function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
+  let client = null;
+  let ready = false;
+
+  function $(id){ return document.getElementById(id); }
+  function status(msg, isError){ const el=$('sbCloudStatus'); if(el){ el.textContent=msg; el.style.color=isError?'#b91c1c':'#374151'; } console[isError?'error':'log']('[supabase]', msg); }
+  function userLine(user){ const el=$('sbCloudUser'); if(el) el.textContent = user ? ('مسجل: ' + (user.email || user.id)) : 'غير مسجل'; }
+  function panelToggle(){ $('sbCloudPanel')?.classList.toggle('open'); }
+
+  async function initClient(){
+    try {
+      if (!window.supabase || !window.supabase.createClient) {
+        status('مكتبة Supabase لم تُحمّل', true); return;
+      }
+      client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      ready = true;
+      const result = await client.auth.getUser();
+      userLine(result?.data?.user || null);
+      status('تم تهيئة الاتصال السحابي');
+    } catch (e) {
+      ready = false;
+      client = null;
+      status('فشل تهيئة Supabase: ' + (e?.message || e), true);
+    }
+  }
+
+  async function exportSnapshot(){
+    const local = {};
+    try {
+      for (let i=0;i<localStorage.length;i++) {
+        const k = localStorage.key(i);
+        if (!k) continue;
+        if (k.startsWith('sb-') || k.includes('-auth-token')) continue;
+        local[k] = localStorage.getItem(k);
+      }
+    } catch(e) {}
+    const lf = {};
+    try {
+      if (window.localforage && localforage.iterate) {
+        await localforage.iterate((value,key) => {
+          if (!key) return;
+          lf[key] = value;
+        });
+      }
+    } catch(e) {
+      console.warn('localforage export failed', e);
+    }
+    return {version:1, exportedAt:new Date().toISOString(), source:'index-android-mobile', localStorage:local, localforage:lf};
+  }
+
+  async function restoreSnapshot(payload){
+    if (!payload || typeof payload !== 'object') throw new Error('بيانات غير صالحة');
+    try {
+      const loc = payload.localStorage || {};
+      Object.keys(loc).forEach(k => {
+        if (!k || k.startsWith('sb-') || k.includes('-auth-token')) return;
+        localStorage.setItem(k, loc[k]);
+      });
+      const lfd = payload.localforage || {};
+      if (window.localforage && localforage.setItem) {
+        for (const [k,v] of Object.entries(lfd)) {
+          await localforage.setItem(k, v);
+        }
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async function requireUser(){
+    if (!ready || !client) throw new Error('الاتصال السحابي غير جاهز');
+    const {data, error} = await client.auth.getUser();
+    if (error) throw error;
+    if (!data.user) throw new Error('سجّل الدخول أولاً');
+    userLine(data.user);
+    return data.user;
+  }
+
+  async function signUp(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ إنشاء الحساب...');
+      const {error} = await client.auth.signUp({email,password});
+      if (error) throw error;
+      status('تم إنشاء الحساب. تحقق من بريدك إذا كان التأكيد مفعلاً.');
+      const u = await client.auth.getUser(); userLine(u?.data?.user || null);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signIn(){
+    try {
+      const email=$('sbEmail').value.trim();
+      const password=$('sbPassword').value;
+      if (!email || !password) throw new Error('أدخل البريد وكلمة المرور');
+      status('جارٍ تسجيل الدخول...');
+      const {data, error} = await client.auth.signInWithPassword({email,password});
+      if (error) throw error;
+      userLine(data.user || null);
+      status('تم تسجيل الدخول');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function signOut(){
+    try {
+      if (!client) return;
+      const {error} = await client.auth.signOut();
+      if (error) throw error;
+      userLine(null);
+      status('تم تسجيل الخروج');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pushCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ رفع البيانات...');
+      const payload = await exportSnapshot();
+      const {error} = await client.from('app_snapshots').upsert({
+        user_id: user.id,
+        payload,
+        source: 'browser-app',
+        updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      status('تم رفع البيانات إلى السحابة');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function pullCloud(){
+    try {
+      const user = await requireUser();
+      status('جارٍ جلب النسخة السحابية...');
+      const {data, error} = await client.from('app_snapshots').select('payload').eq('user_id', user.id).single();
+      if (error) throw error;
+      if (!data || !data.payload) throw new Error('لا توجد نسخة سحابية بعد');
+      await restoreSnapshot(data.payload);
+      status('تم استرجاع البيانات. سيُعاد تحميل التطبيق الآن.');
+      setTimeout(() => location.reload(), 700);
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  async function testConn(){
+    try {
+      if (!ready || !client) throw new Error('Supabase غير جاهز');
+      status('جارٍ اختبار الاتصال...');
+      const {error} = await client.from('app_snapshots').select('user_id', {count:'exact', head:true});
+      if (error && !String(error.message||'').includes('JWT')) throw error;
+      status('الاتصال ناجح');
+    } catch(e){ status(e?.message || String(e), true); }
+  }
+
+  window.addEventListener('load', function(){
+    try {
+      $('sbCloudFab')?.addEventListener('click', panelToggle);
+      $('sbLoginBtn')?.addEventListener('click', signIn);
+      $('sbSignupBtn')?.addEventListener('click', signUp);
+      $('sbLogoutBtn')?.addEventListener('click', signOut);
+      $('sbPushBtn')?.addEventListener('click', pushCloud);
+      $('sbPullBtn')?.addEventListener('click', pullCloud);
+      $('sbTestBtn')?.addEventListener('click', testConn);
+      initClient();
+      window.appCloudSync = { pushCloud, pullCloud, signIn, signUp, signOut, testConn };
+    } catch(e) {
+      status('فشل تهيئة لوحة السحابة: ' + (e?.message || e), true);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
