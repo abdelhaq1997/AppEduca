@@ -1236,6 +1236,9 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
             <div class="flex-row">
               <input type="date" id="att-date" class="form-control" style="width:160px" onchange="UI.renderAttendance()">
               <button class="btn btn-success btn-sm" onclick="UI.markAllPresent()">✓ الكل حاضر</button>
+              <input type="file" id="importAbsenceFile" style="display:none" accept=".xlsx,.xls" onchange="ImportMgr.importAbsenceMassar(this)">
+              <button class="btn btn-success btn-sm" onclick="document.getElementById('importAbsenceFile').click()" title="استيراد سجل غياب من ملف مسار">📥 استيراد غياب</button>
+              <button class="btn btn-primary btn-sm" onclick="BackupMgr.exportAbsenceMassar()" title="تصدير الغياب بقالب مسار الرسمي">📋 تصدير غياب مسار</button>
               <button class="btn btn-ghost btn-sm no-print" onclick="printSection('attendance')">🖨️</button>
             </div>
           </div>
@@ -1276,8 +1279,8 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
               </select>
               <button class="btn btn-info btn-sm" onclick="UI.openExamAnalysis()">📊 تحليل سؤال بسؤال</button>
               <input type="file" id="importGradesFile" style="display:none" accept=".xlsx,.xls,.csv" onchange="ImportMgr.importGrades(this)">
-              <button class="btn btn-success btn-sm" onclick="document.getElementById('importGradesFile').click()">📥 استيراد Excel</button>
-              <button class="btn btn-warning btn-sm" onclick="BackupMgr.exportGradesExcel()">📤 تصدير Excel</button>
+              <button class="btn btn-success btn-sm" onclick="document.getElementById('importGradesFile').click()">📥 استيراد نقط</button>
+              <button class="btn btn-warning btn-sm" onclick="BackupMgr.exportGradesMassar()" title="تصدير النقط بقالب مسار الرسمي">📤 تصدير نقط مسار</button>
               <button class="btn btn-ghost btn-sm no-print" onclick="printSection('grades')">🖨️</button>
             </div>
           </div>
@@ -2604,6 +2607,18 @@ const SheetSync = {
 };
 
 // ══════════════════════════════════════════════════════════
+//  MASSAR EXPORT DEFAULTS — عدّل هذه القيم حسب مؤسستك
+// ══════════════════════════════════════════════════════════
+const MASSAR_DEFAULTS = {
+  academy:    'أكاديمية سوس ماسة',
+  province:   'المديرية الإقليمية لتيزنيت',
+  region:     'إقليم تيزنيت',
+  schoolName: 'م/م المصامدة',
+  teacherName:'ذ. عبد الحق جعايط',
+  schoolYear: '2025-2026',
+};
+
+// ══════════════════════════════════════════════════════════
 //  GLOBAL STATE
 // ══════════════════════════════════════════════════════════
 let PUPILS = {};
@@ -2998,6 +3013,7 @@ const ImportMgr = {
     document.getElementById('paste-names').value = '';
     UI.toast(`تم استيراد ${added} متعلم`, 'success');
   },
+  // ── استيراد نقط (يدعم صيغة مسار وصيغة عادية) ────────────
   importGrades(input) {
     const file = input.files[0]; if (!file) return;
     const subject = getVal('grade-subject') || 'arabic';
@@ -3005,24 +3021,196 @@ const ImportMgr = {
     reader.onload = async (e) => {
       try {
         const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(ws);
-        const allG = await DB.get('grades');
+        const wb   = XLSX.read(data, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const aoa  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        const allG  = await DB.get('grades');
         if (!allG[subject]) allG[subject] = {};
+        const pupils = PupilMgr.getPupilNames();
         let mapped = 0;
-        json.forEach(row => {
-          let name = ''; let grade = null;
-          for (const key in row) { if (key.includes('اسم') && typeof row[key] === 'string') { name = row[key]; break; } }
-          for (const key in row) { const v = parseFloat(row[key]); if (!isNaN(v) && v >= 0 && v <= 10) { grade = v; break; } }
-          if (name && grade !== null) {
-            const match = PupilMgr.getPupilNames().find(p => p === name || p.includes(name) || name.includes(p));
-            if (match) { if (!allG[subject][match]) allG[subject][match] = {}; allG[subject][match]['t1'] = grade; mapped++; }
+        let fmt = 'عادية';
+
+        // ── helper: مطابقة اسم مع قائمة التلاميذ (مرنة) ──
+        const matchName = (raw) => {
+          const n = String(raw || '').trim();
+          if (!n || n.length < 2) return null;
+          return pupils.find(p =>
+            p === n ||
+            p.replace(/\s+/g,' ').trim() === n.replace(/\s+/g,' ').trim() ||
+            p.includes(n) || n.includes(p)
+          ) || null;
+        };
+
+        // ══ 1. صيغة مسار — "نقط المراقبة المستمرة" ══
+        const firstCell = String(aoa[0]?.[3] || aoa[0]?.[0] || '');
+        const isMassarNuqat = firstCell.includes('نقط المراقبة');
+
+        // ══ 2. صيغة دفتر الكفايات — "ملف الكفايات" ══
+        const isLivret = String(aoa[0]?.[3] || aoa[0]?.[0] || '').includes('ملف الكفايات') ||
+                         String(aoa[0]?.[3] || '').includes('ملف الكفايات');
+
+        if (isMassarNuqat) {
+          fmt = 'مسار — نقط';
+          // رأس مزدوج: سطر 5 (index4) + سطر 6 (index5)، بيانات من index 6
+          const headerRow2 = aoa[5] || [];
+          const GRADE_KEYS = {
+            'الفرض 1':'t1','الفرض 2':'t2','الفرض 3':'t3','الفرض 4':'t4',
+            'تاريخ ف1':'h1','تاريخ ف2':'h2','جغرافيا ف1':'g1','جغرافيا ف2':'g2',
+            'مدنية ف1':'c1','مدنية ف2':'c2',
+          };
+          const gradeColKeys = [];
+          for (let c = 4; c < headerRow2.length; c++) {
+            const lbl = String(headerRow2[c] || '').trim();
+            const key = GRADE_KEYS[lbl];
+            if (key) gradeColKeys.push({ col: c, key });
           }
-        });
-        if (mapped > 0) { await DB.set('grades', allG); UI.renderGrades(); UI.toast(`استيراد ${mapped} نقطة`, 'success'); }
-        else UI.toast('لا تطابق', 'warning');
-      } catch { UI.toast('خطأ في القراءة', 'error'); }
+          for (let r = 6; r < aoa.length; r++) {
+            const row = aoa[r];
+            const match = matchName(row[2]);
+            if (!match) continue;
+            if (!allG[subject][match]) allG[subject][match] = {};
+            gradeColKeys.forEach(({ col, key }) => {
+              const v = parseFloat(row[col]);
+              if (!isNaN(v) && v >= 0 && v <= 20) { allG[subject][match][key] = v; mapped++; }
+            });
+          }
+
+        } else if (isLivret) {
+          // ══ صيغة دفتر الكفايات (LivretsDeCompetences) ══
+          // Row 9  (index 9): أرقام مسار التلاميذ
+          // Row 10 (index 10): أسماء التلاميذ في col 4..N
+          // Rows 11+ : كفاية في col2 + نقاط في col4..N
+          fmt = 'دفتر الكفايات';
+          const namesRow = aoa[10] || [];
+          // col 4 → أول تلميذ، حتى آخر عمود غير فارغ
+          const pupilCols = []; // [{col, name}]
+          for (let c = 4; c < namesRow.length; c++) {
+            const raw = String(namesRow[c] || '').trim();
+            if (!raw) continue;
+            const match = matchName(raw);
+            if (match) pupilCols.push({ col: c, name: match });
+          }
+
+          // جمع نقاط كل كفاية لكل تلميذ ثم احسب المعدل
+          const scores = {}; // name → [values]
+          for (let r = 11; r < aoa.length; r++) {
+            const row = aoa[r];
+            // تجاهل الصفوف الفارغة أو غير ذات الصلة
+            if (!row.some(v => v !== '')) continue;
+            pupilCols.forEach(({ col, name }) => {
+              const v = parseFloat(row[col]);
+              if (!isNaN(v) && v >= 0 && v <= 20) {
+                if (!scores[name]) scores[name] = [];
+                scores[name].push(v);
+              }
+            });
+          }
+
+          // احفظ المعدل كـ t1 (يمكن تغييره لاحقاً)
+          const targetKey = 't1';
+          for (const [name, vals] of Object.entries(scores)) {
+            if (!vals.length) continue;
+            const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+            if (!allG[subject][name]) allG[subject][name] = {};
+            allG[subject][name][targetKey] = parseFloat(avg.toFixed(2));
+            mapped++;
+          }
+
+        } else {
+          // ══ صيغة عادية ══
+          const json = XLSX.utils.sheet_to_json(ws);
+          const GRADE_KEYS_LABELS = {
+            'الفرض 1':'t1','الفرض 2':'t2','الفرض 3':'t3','الفرض 4':'t4',
+            'فرض 1':'t1','فرض 2':'t2','t1':'t1','t2':'t2','t3':'t3','t4':'t4',
+            'تاريخ ف1':'h1','تاريخ ف2':'h2','جغرافيا ف1':'g1','جغرافيا ف2':'g2',
+            'مدنية ف1':'c1','مدنية ف2':'c2',
+          };
+          json.forEach(row => {
+            let name = '';
+            for (const key in row) {
+              if ((key.includes('اسم') || key.includes('إسم')) && typeof row[key] === 'string') { name = row[key].trim(); break; }
+            }
+            if (!name) { const v = Object.values(row).find(v => typeof v === 'string' && v.trim().split(' ').length >= 2); if (v) name = v.trim(); }
+            if (!name) return;
+            const match = matchName(name);
+            if (!match) return;
+            if (!allG[subject][match]) allG[subject][match] = {};
+            let foundByKey = false;
+            for (const key in row) {
+              const gKey = GRADE_KEYS_LABELS[key.trim()];
+              if (gKey) { const v = parseFloat(row[key]); if (!isNaN(v) && v >= 0 && v <= 20) { allG[subject][match][gKey] = v; mapped++; foundByKey = true; } }
+            }
+            if (!foundByKey) {
+              for (const key in row) { const v = parseFloat(row[key]); if (!isNaN(v) && v >= 0 && v <= 10) { allG[subject][match]['t1'] = v; mapped++; break; } }
+            }
+          });
+        }
+
+        if (mapped > 0) {
+          await DB.set('grades', allG);
+          UI.renderGrades();
+          UI.toast(`✅ استيراد ${mapped} تلميذ — صيغة: ${fmt}`, 'success');
+        } else {
+          // تشخيص دقيق لسبب عدم التطابق
+          let hint = '';
+          if (isLivret) {
+            const namesRow = aoa[10] || [];
+            const found = namesRow.slice(4).filter(v => String(v||'').trim().length > 1);
+            hint = `الأسماء في الملف: ${found.slice(0,3).join(' / ')}...`;
+          }
+          UI.toast(`⚠️ لا تطابق في الأسماء${hint ? ' — ' + hint : ''}`, 'warning');
+          console.warn('[importGrades] fmt=', isLivret?'livret':isMassarNuqat?'massar':'generic', 'pupils=', pupils.slice(0,3));
+        }
+      } catch(err) { console.error(err); UI.toast('❌ خطأ في قراءة الملف: ' + err.message, 'error'); }
+    };
+    reader.readAsArrayBuffer(file); input.value = '';
+  },
+
+  // ── استيراد الغياب من ملف مسار ────────────────────────
+  importAbsenceMassar(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const aoa  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        const isMassarFmt = String(aoa[0]?.[0] || '').includes('سجل الغياب');
+        // بيانات تبدأ من السطر 5 (index=4) في صيغة مسار، أو 1 في صيغة عادية
+        const startRow = isMassarFmt ? 5 : 1;
+        // أعمدة: م(0) رقم(1) الاسم(2) التاريخ(3) الحالة(4) مبرر(5) السبب(6) عدد(7)
+        const pupils = PupilMgr.getPupilNames();
+        const allAtt = await DB.get('attendance');
+        let mapped = 0;
+
+        for (let r = startRow; r < aoa.length; r++) {
+          const row    = aoa[r];
+          const name   = String(row[2] || '').trim();
+          const date   = String(row[3] || '').trim();
+          const status = String(row[4] || '').trim();
+          if (!name || !date || date === '—') continue;
+          const match = pupils.find(p => p === name || p.includes(name) || name.includes(p));
+          if (!match) continue;
+          // تحويل الحالة
+          let attVal = 'absent';
+          if (status === 'متأخر' || status === 'late') attVal = 'late';
+          else if (status === 'حاضر' || status === 'present') attVal = 'present';
+          if (!allAtt[date]) allAtt[date] = {};
+          allAtt[date][match] = attVal;
+          mapped++;
+        }
+
+        if (mapped > 0) {
+          await DB.set('attendance', allAtt);
+          UI.renderAttendance();
+          UI.toast(`✅ تم استيراد ${mapped} سجل غياب`, 'success');
+        } else {
+          UI.toast('⚠️ لا سجلات مطابقة في الملف', 'warning');
+        }
+      } catch(err) { console.error(err); UI.toast('❌ خطأ في القراءة', 'error'); }
     };
     reader.readAsArrayBuffer(file); input.value = '';
   }
@@ -3174,6 +3362,157 @@ const BackupMgr = {
     XLSX.writeFile(wb, `فروض_${subjNames[subject]}_${State.year}_L${State.level}.xlsx`);
     UI.toast('تم تصدير ملف الفروض', 'success');
   },
+  // ── تصدير النقط بصيغة مسار ─────────────────────────────
+  async exportGradesMassar() {
+    const subject    = getVal('grade-subject') || 'arabic';
+    const subjNames  = {arabic:'اللغة العربية',islamic:'التربية الإسلامية',social:'الاجتماعيات',art:'التربية الفنية',pe:'التربية البدنية'};
+    const teacher    = await Store.get('setting_teacher', MASSAR_DEFAULTS.teacherName);
+    const school     = await Store.get('setting_school',  MASSAR_DEFAULTS.schoolName);
+    const allGrades  = await DB.get('grades');
+    const grades     = allGrades[subject] || {};
+    const pupils     = PupilMgr.getPupils();
+    const cols       = subject === 'social'
+      ? [{id:'h1',lbl:'تاريخ ف1'},{id:'h2',lbl:'تاريخ ف2'},{id:'g1',lbl:'جغرافيا ف1'},{id:'g2',lbl:'جغرافيا ف2'},{id:'c1',lbl:'مدنية ف1'},{id:'c2',lbl:'مدنية ف2'}]
+      : [{id:'t1',lbl:'الفرض 1'},{id:'t2',lbl:'الفرض 2'}];
+
+    // جمع بيانات الغياب لكل تلميذ
+    const allAtt = await DB.get('attendance');
+    const absCountMap = {};
+    Object.keys(allAtt).forEach(date => {
+      Object.keys(allAtt[date] || {}).forEach(name => {
+        if (allAtt[date][name] === 'absent') absCountMap[name] = (absCountMap[name] || 0) + 1;
+      });
+    });
+
+    const wb = XLSX.utils.book_new();
+
+    // ── الهيدر الإداري ──
+    const adminLabels = ['الأكاديمية','م.الإقليمية','الإقليم','المؤسسة','الأستاذ','المستوى','القسم','الدورة','المادة','السنة الدراسية'];
+    const adminValues = [
+      MASSAR_DEFAULTS.academy, MASSAR_DEFAULTS.province, MASSAR_DEFAULTS.region,
+      school, teacher, `المستوى ${State.level}`, `${State.level}أ`,
+      'الأولى', subjNames[subject], MASSAR_DEFAULTS.schoolYear
+    ];
+
+    // عناوين أعمدة الجدول
+    const gradeHeaders1 = cols.map(c => subjNames[subject]);
+    const absHeaders1   = cols.map(() => 'الغياب');
+    const gradeHeaders2 = cols.map(c => c.lbl);
+    const absHeaders2   = cols.map((c,i) => `غ${i+1}`);
+
+    const wsData = [
+      // صف العنوان
+      ['نقط المراقبة المستمرة', ...Array(cols.length * 2 + 3).fill('')],
+      // الهيدر الإداري
+      adminLabels,
+      adminValues,
+      [],
+      // رأس الجدول — صف 1
+      ['م', 'رقم التلميذ', 'إسم التلميذ', 'تاريخ الإزدياد', ...gradeHeaders1, ...absHeaders1],
+      // رأس الجدول — صف 2
+      ['', '', '', '', ...gradeHeaders2, ...absHeaders2],
+    ];
+
+    pupils.forEach((p, i) => {
+      const g = grades[p.name] || {};
+      wsData.push([
+        i + 1,
+        p.id || '',
+        p.name,
+        p.birthDate || '',
+        ...cols.map(c => (g[c.id] !== undefined && g[c.id] !== '') ? g[c.id] : ''),
+        ...cols.map(() => absCountMap[p.name] || 0),
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const totalCols = cols.length * 2 + 4;
+    ws['!merges'] = [
+      {s:{r:0,c:0}, e:{r:0,c:totalCols-1}},  // عنوان
+      {s:{r:1,c:0}, e:{r:1,c:totalCols-1}},  // تسميات الهيدر
+      {s:{r:2,c:0}, e:{r:2,c:totalCols-1}},  // قيم الهيدر
+    ];
+    ws['!cols'] = [{wch:5},{wch:36},{wch:30},{wch:14},...cols.map(()=>({wch:12})),...cols.map(()=>({wch:10}))];
+    // تنسيق العنوان بخط عريض
+    if (ws['A1']) { ws['A1'].s = {font:{bold:true,sz:14},alignment:{horizontal:'center'}}; }
+    XLSX.utils.book_append_sheet(wb, ws, 'نقط المراقبة المستمرة');
+    XLSX.writeFile(wb, `مسار_نقط_${subjNames[subject]}_${State.year}_L${State.level}.xlsx`);
+    UI.toast('✅ تم تصدير ملف النقط بصيغة مسار', 'success');
+  },
+
+  // ── تصدير الغياب بصيغة مسار ─────────────────────────────
+  async exportAbsenceMassar() {
+    const teacher  = await Store.get('setting_teacher', MASSAR_DEFAULTS.teacherName);
+    const school   = await Store.get('setting_school',  MASSAR_DEFAULTS.schoolName);
+    const allAtt   = await DB.get('attendance');
+    const pupils   = PupilMgr.getPupils();
+    const subject  = getVal('grade-subject') || 'arabic';
+    const subjNames= {arabic:'اللغة العربية',islamic:'التربية الإسلامية',social:'الاجتماعيات',art:'التربية الفنية',pe:'التربية البدنية'};
+
+    const wb = XLSX.utils.book_new();
+
+    const adminLabels = ['الأكاديمية','م.الإقليمية','الإقليم','المؤسسة','الأستاذ','المستوى','القسم','الدورة','المادة','السنة الدراسية'];
+    const adminValues = [
+      MASSAR_DEFAULTS.academy, MASSAR_DEFAULTS.province, MASSAR_DEFAULTS.region,
+      school, teacher, `المستوى ${State.level}`, `${State.level}أ`,
+      'الأولى', subjNames[subject], MASSAR_DEFAULTS.schoolYear
+    ];
+
+    const wsData = [
+      ['سجل الغيابات', ...Array(7).fill('')],
+      adminLabels,
+      adminValues,
+      [],
+      ['م', 'رقم التلميذ', 'إسم التلميذ', 'تاريخ الغياب', 'الحالة', 'مبرر', 'السبب', 'عدد الغيابات'],
+    ];
+
+    // بناء قائمة الغيابات لكل تلميذ
+    const absMap = {};
+    Object.keys(allAtt).sort().forEach(date => {
+      const dayData = allAtt[date] || {};
+      pupils.forEach(p => {
+        const status = dayData[p.name];
+        if (status === 'absent' || status === 'late') {
+          if (!absMap[p.name]) absMap[p.name] = [];
+          absMap[p.name].push({ date, status });
+        }
+      });
+    });
+
+    let rowIdx = 1;
+    pupils.forEach((p, i) => {
+      const records = absMap[p.name] || [];
+      const totalAbs = records.filter(r => r.status === 'absent').length;
+      if (records.length === 0) {
+        wsData.push([i+1, p.id||'', p.name, '—', 'حاضر', '', '', 0]);
+      } else {
+        records.forEach((rec, ri) => {
+          wsData.push([
+            ri === 0 ? i+1 : '',
+            ri === 0 ? (p.id||'') : '',
+            ri === 0 ? p.name : '',
+            rec.date,
+            rec.status === 'absent' ? 'غائب' : 'متأخر',
+            '',   // مبرر — يملأه الأستاذ
+            '',   // السبب — يملأه الأستاذ
+            ri === 0 ? totalAbs : '',
+          ]);
+        });
+      }
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [
+      {s:{r:0,c:0}, e:{r:0,c:7}},
+      {s:{r:1,c:0}, e:{r:1,c:7}},
+      {s:{r:2,c:0}, e:{r:2,c:7}},
+    ];
+    ws['!cols'] = [{wch:5},{wch:36},{wch:30},{wch:14},{wch:10},{wch:10},{wch:22},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws, 'سجل الغيابات');
+    XLSX.writeFile(wb, `مسار_غياب_${State.year}_L${State.level}.xlsx`);
+    UI.toast('✅ تم تصدير سجل الغياب بصيغة مسار', 'success');
+  },
+
   importJSON(input) {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
