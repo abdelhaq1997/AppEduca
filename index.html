@@ -6304,6 +6304,7 @@ window.addEventListener('load', async () => {
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="pwa.css">
 <link rel="stylesheet" href="safe_ui_patch.css">
+<link rel="stylesheet" href="educator_patch.css">
 </head><body><div style="border-bottom:3px double #4338ca;padding-bottom:12px;margin-bottom:16px"><h1 style="font-size:22px;color:#4338ca">تقرير دعم المتعثرين</h1><div class="muted">${school} — ${State.year} — المستوى ${State.level} — ${teacher}</div></div>${rows.length ? `<table><thead><tr><th>الاسم</th><th>PI</th><th>المعدل</th><th>الغيابات</th><th>حالة الدعم</th><th>آخر ملاحظة</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.name}</td><td>${r.pi}</td><td>${r.avg}</td><td>${r.abs}</td><td>${r.status}</td><td>${r.note}</td></tr>`).join('')}</tbody></table>` : '<p>لا توجد حالات دعم حالياً.</p>'}<script>window.onload=function(){window.print();}<\/script></body></html>`;
       const w = window.open('', '_blank'); w.document.write(html); w.document.close();
     }
@@ -6421,39 +6422,7 @@ window.addEventListener('load', async () => {
 
 <script src="pwa.js"></script>
 <script src="safe_ui_patch.js"></script>
-  <button id="installApp" style="
-position:fixed;
-bottom:20px;
-left:20px;
-padding:10px 16px;
-background:#4f46e5;
-color:white;
-border:none;
-border-radius:10px;
-font-size:14px;
-cursor:pointer;
-display:none;
-z-index:9999;">
-تثبيت التطبيق
-</button>
-
-<script>
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    document.getElementById('installApp').style.display = 'block';
-});
-
-document.getElementById('installApp').addEventListener('click', async () => {
-    document.getElementById('installApp').style.display = 'none';
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-});
-</script>
-<script src="./pwa.js"></script>
+<script src="educator_patch.js"></script>
 <script>
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.body.classList.contains('wheel-mobile-focus')) toggleWheelFocus(false);
