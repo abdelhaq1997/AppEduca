@@ -4,9 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>بدون إنترنت</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px}
+    .card{max-width:520px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:24px;box-shadow:0 12px 30px rgba(15,23,42,.08);text-align:center}
+    h1{margin:0 0 12px;font-size:24px}
+    p{line-height:1.9;color:#475569}
+    .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+    a,button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer;text-decoration:none}
+    .primary{background:#4338ca;color:#fff}
+    .ghost{background:#e2e8f0;color:#0f172a}
+    .hint{margin-top:14px;font-size:13px;color:#64748b}
+  </style>
 </head>
-<body style="font-family:Arial,sans-serif;text-align:center;padding:40px">
-  <h2>لا يوجد اتصال بالإنترنت</h2>
-  <p>افتح التطبيق بعد عودة الاتصال أو بعد تخزين الملفات لأول مرة.</p>
+<body>
+  <div class="card">
+    <h1>أنت الآن بدون إنترنت</h1>
+    <p>إذا كان التطبيق قد فُتح من قبل فجرّب الرجوع إلى الواجهة الرئيسية. وإذا كانت هذه أول زيارة فلابد من الاتصال مرة واحدة حتى تُخزَّن الملفات محلياً.</p>
+    <div class="actions">
+      <a class="primary" href="./index.html">العودة إلى التطبيق</a>
+      <button class="ghost" onclick="location.reload()">إعادة المحاولة</button>
+    </div>
+    <div class="hint" id="statusHint">جارٍ فحص الاتصال...</div>
+  </div>
+  <script>
+    const hint=document.getElementById('statusHint');
+    function update(){ hint.textContent = navigator.onLine ? 'الاتصال عاد. يمكنك إعادة المحاولة الآن.' : 'ما زلت غير متصل. البيانات المحلية ستعمل فقط إذا كانت الملفات مخزنة سابقاً.'; }
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    update();
+  </script>
 </body>
 </html>

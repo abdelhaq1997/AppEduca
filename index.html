@@ -2667,26 +2667,196 @@ const AuthMgr = {
 // ══════════════════════════════════════════════════════════
 //  DB MODULE
 // ══════════════════════════════════════════════════════════
+const DB_DEFAULTS = {
+  attendance: {}, homework: {}, grades: {}, activities: {},
+  remediation: [], library: [], notes: [], sessions: [], reports: []
+};
+
+function deepCloneSafe(value) {
+  try { return JSON.parse(JSON.stringify(value)); }
+  catch { return value; }
+}
+function cleanText(value, max = 5000) {
+  return String(value ?? '').replace(/\u0000/g, '').trim().slice(0, max);
+}
+function cleanNumber(value, fallback = '') {
+  if (value === '' || value == null) return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+const DB_NORMALIZERS = {
+  attendance(data) {
+    const out = {};
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return out;
+    for (const [date, pupils] of Object.entries(data)) {
+      if (!pupils || typeof pupils !== 'object' || Array.isArray(pupils)) continue;
+      out[date] = {};
+      for (const [name, entry] of Object.entries(pupils)) {
+        const base = (entry && typeof entry === 'object' && !Array.isArray(entry))
+          ? entry
+          : { status: entry || 'present', reason: '', note: '' };
+        const status = ['present', 'absent', 'late'].includes(base.status) ? base.status : 'present';
+        out[date][name] = {
+          status,
+          reason: cleanText(base.reason, 300),
+          note: cleanText(base.note, 1000)
+        };
+      }
+    }
+    return out;
+  },
+  homework(data) {
+    const out = {};
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return out;
+    for (const [date, pupils] of Object.entries(data)) {
+      if (!pupils || typeof pupils !== 'object' || Array.isArray(pupils)) continue;
+      out[date] = {};
+      for (const [name, status] of Object.entries(pupils)) {
+        out[date][name] = ['done', 'not_done'].includes(status) ? status : '';
+      }
+    }
+    return out;
+  },
+  grades(data) {
+    const out = {};
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return out;
+    for (const [subject, pupils] of Object.entries(data)) {
+      if (!pupils || typeof pupils !== 'object' || Array.isArray(pupils)) continue;
+      out[subject] = {};
+      for (const [name, record] of Object.entries(pupils)) {
+        if (!record || typeof record !== 'object' || Array.isArray(record)) { out[subject][name] = {}; continue; }
+        const row = {};
+        for (const [k, v] of Object.entries(record)) {
+          row[k] = typeof v === 'number' ? v : cleanNumber(v, v === '' ? '' : v);
+        }
+        out[subject][name] = row;
+      }
+    }
+    return out;
+  },
+  activities(data) {
+    const out = {};
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return out;
+    for (const [name, record] of Object.entries(data)) {
+      const src = (record && typeof record === 'object' && !Array.isArray(record)) ? record : {};
+      out[name] = {
+        projects: Math.max(0, Number(src.projects) || 0),
+        environment: Math.max(0, Number(src.environment) || 0),
+        research: Math.max(0, Number(src.research) || 0),
+        initiatives: Math.max(0, Number(src.initiatives) || 0)
+      };
+    }
+    return out;
+  },
+  notes(data) {
+    if (!Array.isArray(data)) return [];
+    return data.filter(x => x && typeof x === 'object').map(n => ({
+      id: cleanText(n.id || uuid(), 80),
+      student: cleanText(n.student, 160),
+      type: cleanText(n.type || 'pedagogical', 60),
+      text: cleanText(n.text, 3000),
+      date: cleanText(n.date || State.today, 32)
+    }));
+  },
+  reports(data) {
+    if (!Array.isArray(data)) return [];
+    return data.filter(x => x && typeof x === 'object').map(r => ({
+      id: cleanText(r.id || uuid(), 80),
+      title: cleanText(r.title || 'تقرير', 240),
+      student: cleanText(r.student, 160),
+      date: cleanText(r.date || State.today, 32),
+      body: String(r.body ?? '').slice(0, 50000),
+      type: cleanText(r.type || 'other', 80)
+    }));
+  },
+  remediation(data) {
+    if (!Array.isArray(data)) return [];
+    return data.filter(x => x && typeof x === 'object').map(r => ({
+      id: cleanText(r.id || uuid(), 80),
+      student: cleanText(r.student, 160),
+      domain: cleanText(r.domain, 120),
+      type: cleanText(r.type, 240),
+      plan: cleanText(r.plan, 2000),
+      actions: cleanText(r.actions, 2000),
+      date: cleanText(r.date || State.today, 32),
+      status: cleanText(r.status || 'active', 40),
+      followupDays: Math.max(0, Number(r.followupDays) || 0),
+      nextFollowup: cleanText(r.nextFollowup, 32)
+    }));
+  },
+  library(data) {
+    if (!Array.isArray(data)) return [];
+    return data.filter(x => x && typeof x === 'object').map(item => ({
+      title: cleanText(item.title || item.name || 'مورد', 240),
+      student: cleanText(item.student, 160),
+      type: cleanText(item.type, 80),
+      body: String(item.body ?? '').slice(0, 50000),
+      date: cleanText(item.date || State.today, 32)
+    }));
+  },
+  sessions(data) {
+    if (!Array.isArray(data)) return [];
+    return data.filter(x => x && typeof x === 'object').map(item => deepCloneSafe(item));
+  }
+};
+function normalizeDBPayload(type, data) {
+  const normalizer = DB_NORMALIZERS[type];
+  const fallback = Object.prototype.hasOwnProperty.call(DB_DEFAULTS, type) ? deepCloneSafe(DB_DEFAULTS[type]) : {};
+  if (!normalizer) return data == null ? fallback : deepCloneSafe(data);
+  try { return normalizer(data); }
+  catch (e) {
+    console.warn('DB.normalize failed for', type, e);
+    return fallback;
+  }
+}
+function persistLocalBackup(key, data) {
+  try {
+    localStorage.setItem(`backup:${key}`, JSON.stringify({ savedAt: new Date().toISOString(), data }));
+  } catch {}
+}
+
+const DB_CHANGE_HOOKS = [];
+function registerDataChangeHook(fn){
+  if(typeof fn !== 'function') return ()=>{};
+  DB_CHANGE_HOOKS.push(fn);
+  return ()=> { const idx = DB_CHANGE_HOOKS.indexOf(fn); if(idx >= 0) DB_CHANGE_HOOKS.splice(idx, 1); };
+}
+async function notifyDataChange(type){
+  for(const hook of DB_CHANGE_HOOKS){
+    try { await hook(type, State); }
+    catch(e){ console.warn('dataChangeHook', e); }
+  }
+}
+window.registerDataChangeHook = registerDataChangeHook;
+
 const DB = {
   _k(type) { return `${State.year}_${type}_L${State.level}`; },
   
   async get(type) {
-    const def = ['remediation','library','notes','sessions','reports'].includes(type) ? [] : {};
-    return await Store.get(this._k(type), def);
+    const def = Object.prototype.hasOwnProperty.call(DB_DEFAULTS, type) ? DB_DEFAULTS[type] : {};
+    const raw = await Store.get(this._k(type), deepCloneSafe(def));
+    return normalizeDBPayload(type, raw);
   },
   async set(type, data) {
-    await Store.set(this._k(type), data);
+    const safeData = normalizeDBPayload(type, data);
+    persistLocalBackup(this._k(type), safeData);
+    await Store.set(this._k(type), safeData);
     State._dataVersion = (State._dataVersion || 1) + 1;
     State._tabStamp = {};
-    Engine.checkAlerts();
+    if (window.Engine && typeof Engine.checkAlerts === 'function') Engine.checkAlerts();
+    await notifyDataChange(type);
   },
   async getFluency(s, w) {
-    return await Store.get(`${this._k('flu')}_S${s}_W${w}`, {});
+    const raw = await Store.get(`${this._k('flu')}_S${s}_W${w}`, {});
+    return (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
   },
   async setFluency(s, w, data) {
-    await Store.set(`${this._k('flu')}_S${s}_W${w}`, data);
+    const safeData = (data && typeof data === 'object' && !Array.isArray(data)) ? deepCloneSafe(data) : {};
+    persistLocalBackup(`${this._k('flu')}_S${s}_W${w}`, safeData);
+    await Store.set(`${this._k('flu')}_S${s}_W${w}`, safeData);
     State._dataVersion = (State._dataVersion || 1) + 1;
     State._tabStamp = {};
+    await notifyDataChange('fluency');
   },
   async addNote() {
     const st = getVal('note-student'), ty = getVal('note-type'), tx = getVal('note-text');
@@ -4532,7 +4702,7 @@ const UI = {
     const school = await Store.get('setting_school', 'م/م المصامدة');
     const zone = document.getElementById('reportPrintZone');
     zone.innerHTML = buildPrintHeader(title, teacher, school, State.year, State.level) + `<div style="margin-top:16px;font-size:13px;line-height:2;direction:rtl">${body}</div>`;
-    document.body.className = 'print-report-editor'; window.print(); document.body.className = '';
+    withPrintMode('print-report-editor');
   },
 
   _updateChart(key, id, config) {
@@ -5547,9 +5717,33 @@ const TAB_TITLES = {
   hypothesis:'🧪 مختبر الفرضيات التربوية', equity:'🎯 مؤشر العدالة التعليمية', biography:'📖 سيرة المتعلم التراكمية',
 'today-class':'🎯 حصة اليوم',
 };
+const TAB_ALIASES = {
+  'support-groups':'tools',
+  'journal':'sessions',
+  'hypothesis':'dashboard',
+  'equity':'dashboard',
+  'biography':'reports',
+  'parent-report':'dashboard'
+};
+const AFTER_TAB_CHANGE_HOOKS = [];
+function registerAfterTabChangeHook(fn){
+  if(typeof fn !== 'function') return ()=>{};
+  AFTER_TAB_CHANGE_HOOKS.push(fn);
+  return ()=> {
+    const idx = AFTER_TAB_CHANGE_HOOKS.indexOf(fn);
+    if(idx >= 0) AFTER_TAB_CHANGE_HOOKS.splice(idx, 1);
+  };
+}
+async function runAfterTabChangeHooks(tabId){
+  for(const hook of AFTER_TAB_CHANGE_HOOKS){
+    try { await hook(tabId, State); }
+    catch(e){ console.warn('afterTabChangeHook', e); }
+  }
+}
+window.registerAfterTabChangeHook = registerAfterTabChangeHook;
+
 async function switchTab(tabId) {
-  const aliasTabs = { 'support-groups':'tools', 'journal':'sessions', 'hypothesis':'dashboard', 'equity':'dashboard', 'biography':'reports' };
-  tabId = aliasTabs[tabId] || tabId;
+  tabId = TAB_ALIASES[tabId] || tabId;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.mobile-bottom-nav .mb-item').forEach(b => b.classList.remove('active'));
@@ -5569,6 +5763,7 @@ async function switchTab(tabId) {
 
   await refreshCurrentTab(tabId);
   updateMobileShell();
+  await runAfterTabChangeHooks(tabId);
 }
 
 function toggleWheelFocus(force) {
@@ -5696,6 +5891,20 @@ function buildPrintHeader(title, teacher, school, year, level) {
   </div>`;
 }
 
+function withPrintMode(modeClass, beforePrint, afterPrint){
+  const prevClass = document.body.className;
+  try {
+    if (typeof beforePrint === 'function') beforePrint();
+    document.body.className = modeClass || prevClass || '';
+    window.print();
+  } finally {
+    setTimeout(() => {
+      document.body.className = prevClass;
+      if (typeof afterPrint === 'function') afterPrint();
+    }, 180);
+  }
+}
+
 async function printSection(section) {
   const year = State.year, level = State.level;
   const teacher = await Store.get('setting_teacher', 'ذ. عبد الحق جعايط');
@@ -5709,7 +5918,7 @@ async function printSection(section) {
   const zone = document.getElementById('printSectionZone');
   zone.innerHTML = buildPrintHeader(title, teacher, school, year, level) + `<div style="margin-top:16px">${content}</div>`;
   
-  document.body.className = 'print-section'; window.print(); document.body.className = '';
+  withPrintMode('print-section');
 }
 
 async function printFluencyAllWeeks() {
@@ -5740,7 +5949,7 @@ async function printFluencyAllWeeks() {
   const zone = document.getElementById('fluencyAllZone');
   zone.innerHTML = html;
   
-  document.body.className = 'print-fluency-all'; window.print(); document.body.className = '';
+  withPrintMode('print-fluency-all');
 }
 
 
@@ -5753,23 +5962,20 @@ function printCurrentTab() {
   const title = (document.getElementById('tabTitle')?.textContent || 'طباعة').trim();
   const level = State?.level || '';
   const year = State?.year || '';
-  const today = new Date().toLocaleDateString('ar-MA');
+  const teacher = document.getElementById('setting-teacher')?.value || 'الأستاذ';
+  const school = document.getElementById('setting-school')?.value || 'المؤسسة';
 
   document.querySelectorAll('.print-header').forEach(el => el.remove());
   const header = document.createElement('div');
   header.className = 'print-header';
-  header.innerHTML = `
-    <h1 style="font:900 22px Cairo,sans-serif;margin:0 0 8px">${title}</h1>
-    <div style="font-size:12px;color:#444">التاريخ: ${today} | المستوى: ${level} | السنة: ${year}</div>
-  `;
+  header.innerHTML = buildPrintHeader(title, teacher, school, year, level);
   activeTab.prepend(header);
 
   document.title = title;
-  window.print();
-  setTimeout(() => {
+  withPrintMode('print-section', null, () => {
     header.remove();
     document.title = oldTitle;
-  }, 300);
+  });
 }
 
 UI.toggleQuickActions = function(){
@@ -5887,7 +6093,7 @@ async function printClassReportUI() {
   content += `</tbody></table>`;
   
   setHtml('print-content', content);
-  document.body.className = 'print-mode-report'; window.print(); document.body.className = '';
+  withPrintMode('print-mode-report');
 }
 
 // ══════════════════════════════════════════════════════════

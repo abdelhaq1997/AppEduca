@@ -65,18 +65,17 @@
       setTimeout(render,800);
     }
   }
-  function patchSwitchTab(){
-    if(typeof window.switchTab!=='function') return;
-    const old=window.switchTab;
-    window.switchTab=function(name){
-      if(['sessions','equity','biography','parent-report','hypothesis'].includes(name)) name='dashboard';
-      return old.apply(this, arguments=[name]);
-    };
+  function registerTabPatchHooks(){
+    if(typeof window.registerAfterTabChangeHook==='function'){
+      window.registerAfterTabChangeHook((name)=>{
+        if(['dashboard','tools','class-analysis','reports','settings'].includes(name)) removeUnwanted();
+      });
+    }
   }
   onReady(function(){
     removeUnwanted();
     patchSocialAverages();
-    patchSwitchTab();
+    registerTabPatchHooks();
     setTimeout(()=>{ removeUnwanted(); patchWheel(); addQuickClassSummary(); }, 1200);
   });
 })();

@@ -165,8 +165,17 @@
       }catch(e){ console.warn('daily card render failed', e); }
     }
     render();
-    const oldSet = DB.set.bind(DB);
-    DB.set = async function(type, data){ const r = await oldSet(type, data); setTimeout(render, 60); setTimeout(()=>renderQuickMode(), 90); setTimeout(()=>renderAnalyticsLite(), 120); return r; };
+    if(typeof window.registerDataChangeHook === 'function' && !window.__educatorDataRefreshHook){
+      window.__educatorDataRefreshHook = true;
+      window.registerDataChangeHook((type)=>{
+        if(['attendance','homework','notes','grades','fluency'].includes(type)){
+          setTimeout(render, 60);
+          setTimeout(()=>renderQuickMode(), 90);
+          setTimeout(()=>renderAnalyticsLite(), 120);
+          setTimeout(()=>renderTopUtilityResults(), 140);
+        }
+      });
+    }
   }
 
   async function buildFocusPanel(){
@@ -462,20 +471,17 @@
     box.innerHTML = filtered.length ? filtered.map(r => `<button type="button" class="educator-result-item" data-open-student="${esc(r.name)}">${esc(r.name)}<span>${r.status==='absent'?'غياب':'متابعة'}</span></button>`).join('') : '<span class="educator-soft-note">لا توجد نتائج حالياً.</span>';
   }
 
-  function patchSwitchTabHooks(){
-    if(!window.switchTab || window.switchTab.__educatorExtraPatched) return;
-    const old = window.switchTab.bind(window);
-    window.switchTab = async function(tabId){
-      const res = await old(tabId);
+  function registerTabHooks(){
+    if(typeof window.registerAfterTabChangeHook!=='function' || window.__educatorTabHooksReady) return;
+    window.__educatorTabHooksReady = true;
+    window.registerAfterTabChangeHook((tabId)=>{
       try{
         if(tabId==='settings') buildSettingsEnhancer();
         if(tabId==='today-class') renderQuickMode();
         if(tabId==='class-analysis') renderAnalyticsLite();
         if(tabId==='dashboard') renderTopUtilityResults();
       }catch(e){ console.warn(e); }
-      return res;
-    };
-    window.switchTab.__educatorExtraPatched = true;
+    });
   }
 
   ready(async function(){
@@ -489,7 +495,7 @@
       renderQuickMode();
       renderAnalyticsLite();
       buildTopUtilityBar();
-      patchSwitchTabHooks();
+      registerTabHooks();
     }catch(e){ console.warn('educator patch init failed', e); }
   });
 })();
