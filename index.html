@@ -2416,28 +2416,60 @@ async function safeInitApp() {
 }
 
 const Store = (() => {
-  const db = localforage.createInstance({ name: 'edu_platform_v8', storeName: 'data' });
+  const APP_DB_NAME = 'edu_platform_v8';
   const SYS_PREFIX = '__sys__';
+  const SYSTEM_STORE = 'system';
+  const GUEST_STORE = 'guest';
   const isSystemKey = (key) => String(key || '').startsWith(SYS_PREFIX);
+  const systemDb = localforage.createInstance({ name: APP_DB_NAME, storeName: SYSTEM_STORE });
+  let currentScope = GUEST_STORE;
+  let dataDb = localforage.createInstance({ name: APP_DB_NAME, storeName: currentScope });
+
+  function normalizeScope(scope) {
+    const raw = String(scope || GUEST_STORE).trim();
+    return raw.replace(/[^a-zA-Z0-9_]/g, '_') || GUEST_STORE;
+  }
+
+  function buildUserScope(userId) {
+    return 'user_' + normalizeScope(userId);
+  }
+
+  async function switchScope(scope) {
+    const next = normalizeScope(scope);
+    if (next === currentScope) return currentScope;
+    dataDb = localforage.createInstance({ name: APP_DB_NAME, storeName: next });
+    currentScope = next;
+    return currentScope;
+  }
+
   return {
+    async switchUser(userId) {
+      const scope = userId ? buildUserScope(userId) : GUEST_STORE;
+      await switchScope(scope);
+      await systemDb.setItem(SYS_PREFIX + 'current_scope', scope);
+      return scope;
+    },
+    async getCurrentScope() {
+      return currentScope;
+    },
     async get(key, defaultVal = null) {
-      try { const v = await db.getItem(key); return v !== null ? v : defaultVal; }
+      try { const v = await dataDb.getItem(key); return v !== null ? v : defaultVal; }
       catch { return defaultVal; }
     },
     async set(key, value) {
       try {
-        await db.setItem(key, value);
+        await dataDb.setItem(key, value);
         showSyncStatus();
         if (window.SyncMgr && typeof SyncMgr.markDirty === 'function') SyncMgr.markDirty(key);
       } catch(e) { console.error('Store.set', e); }
     },
     async remove(key) {
       try {
-        await db.removeItem(key);
+        await dataDb.removeItem(key);
         if (window.SyncMgr && typeof SyncMgr.markDirty === 'function') SyncMgr.markDirty(key);
       } catch {}
     },
-    async keys() { try { return await db.keys(); } catch { return []; } },
+    async keys() { try { return await dataDb.keys(); } catch { return []; } },
     async exportAll() {
       const keys = await this.keys();
       const data = {};
@@ -2455,11 +2487,11 @@ const Store = (() => {
         if (clearMissing) {
           const keys = await this.keys();
           for (const k of keys) {
-            if (!isSystemKey(k)) await db.removeItem(k);
+            if (!isSystemKey(k)) await dataDb.removeItem(k);
           }
         }
         for (const [k, v] of Object.entries(data || {})) {
-          if (!isSystemKey(k)) await db.setItem(k, v);
+          if (!isSystemKey(k)) await dataDb.setItem(k, v);
         }
       } finally {
         window.__REMOTE_APPLY__ = prev;
@@ -2470,12 +2502,11 @@ const Store = (() => {
       const prev = window.__REMOTE_APPLY__;
       window.__REMOTE_APPLY__ = !!remote;
       try {
+        await dataDb.clear();
         if (!keepSystem) {
-          await db.clear();
-        } else {
-          const keys = await this.keys();
-          for (const k of keys) {
-            if (!isSystemKey(k)) await db.removeItem(k);
+          const sysKeys = await systemDb.keys();
+          for (const k of sysKeys) {
+            if (String(k).startsWith(SYS_PREFIX)) await systemDb.removeItem(k);
           }
         }
         if (window.SyncMgr && typeof SyncMgr.markDirty === 'function' && !remote) SyncMgr.markDirty('__clear__');
@@ -2483,14 +2514,19 @@ const Store = (() => {
       finally { window.__REMOTE_APPLY__ = prev; }
     },
     async getSystem(key, defaultVal = null) {
-      return this.get(SYS_PREFIX + key, defaultVal);
+      try {
+        const v = await systemDb.getItem(SYS_PREFIX + key);
+        return v !== null ? v : defaultVal;
+      } catch {
+        return defaultVal;
+      }
     },
     async setSystem(key, value) {
-      try { await db.setItem(SYS_PREFIX + key, value); }
+      try { await systemDb.setItem(SYS_PREFIX + key, value); }
       catch (e) { console.error('Store.setSystem', e); }
     },
     async removeSystem(key) {
-      try { await db.removeItem(SYS_PREFIX + key); }
+      try { await systemDb.removeItem(SYS_PREFIX + key); }
       catch {}
     },
     isSystemKey
@@ -2597,9 +2633,16 @@ const SyncMgr = {
         return 'pulled';
       }
       if (!remote && hasLocal) {
-        await this.flushQueue('bootstrap-push');
+        const activeUserId = await Store.getSystem('active_user_id', '');
+        if (activeUserId && user?.id && activeUserId === user.id) {
+          await this.flushQueue('bootstrap-push');
+          this._bootstrapped = true;
+          return 'pushed';
+        }
+        await Store.clear({ keepSystem: true, remote: true });
+        this._showSyncBadge('🆕 هذا الحساب لا يملك نسخة سحابية بعد — يبدأ ببيانات فارغة', 'info');
         this._bootstrapped = true;
-        return 'pushed';
+        return 'blank';
       }
       this._bootstrapped = true;
       this._showSyncBadge(remote ? '✅ البيانات متزامنة' : '☁️ لا توجد نسخة سحابية بعد', 'info');
@@ -2816,7 +2859,21 @@ const AuthMgr = {
     }
   },
 
+  async ensureUserScope() {
+    if (!this.user?.id) return;
+    const previousActiveUserId = await Store.getSystem('active_user_id', '');
+    await Store.switchUser(this.user.id);
+    if (previousActiveUserId && previousActiveUserId !== this.user.id) {
+      await Store.removeSystem('last_remote_at');
+      await Store.removeSystem('last_sync_reason');
+      await Store.removeSystem('cloud_pending');
+    }
+    await Store.setSystem('active_user_id', this.user.id);
+    await Store.setSystem('active_user_email', this.user.email || '');
+  },
+
   async ensureAppReady() {
+    await this.ensureUserScope();
     this.showApp();
     this.renderIdentity();
     if (!this._appReady) {
@@ -2937,6 +2994,12 @@ const AuthMgr = {
     try {
       if (window.SyncMgr) await SyncMgr.flushQueue('logout');
       await window.__SB_AUTH__.signOut();
+      await Store.switchUser(null);
+      await Store.removeSystem('active_user_id');
+      await Store.removeSystem('active_user_email');
+      await Store.removeSystem('last_remote_at');
+      await Store.removeSystem('last_sync_reason');
+      await Store.removeSystem('cloud_pending');
     } catch (e) {
       console.error('Auth logout', e);
     } finally {
@@ -7006,6 +7069,12 @@ setTimeout(updateMobileShell, 300);
         try {
           if (event === 'SIGNED_OUT') {
             sessionStorage.removeItem('auth_ok');
+            Store.switchUser(null).catch(()=>{});
+            Store.removeSystem('active_user_id').catch(()=>{});
+            Store.removeSystem('active_user_email').catch(()=>{});
+            Store.removeSystem('last_remote_at').catch(()=>{});
+            Store.removeSystem('last_sync_reason').catch(()=>{});
+            Store.removeSystem('cloud_pending').catch(()=>{});
           }
           if (event === 'SIGNED_IN' && session?.user) {
             sessionStorage.setItem('auth_ok', '1');
