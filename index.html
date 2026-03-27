@@ -988,8 +988,8 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
 <div id="loginScreen" class="login-screen" style="display:none">
   <div class="login-box">
     <div class="login-icon">🔐</div>
-    <h2 class="login-title">تسجيل الدخول</h2>
-    <p class="login-sub">لن تظهر أي بيانات قبل المصادقة.</p>
+    <h2 class="login-title">دخول آمن</h2>
+    <p class="login-sub">دخول بالبريد الإلكتروني. البيانات تُحمَّل بعد المصادقة فقط.</p>
     <div class="login-form">
       <div>
         <label class="form-label">البريد الإلكتروني</label>
@@ -999,17 +999,13 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
         <label class="form-label">كلمة المرور</label>
         <input type="password" id="login-pass" class="form-control" placeholder="أدخل كلمة المرور..." autocomplete="current-password" onkeydown="if(event.key==='Enter')AuthMgr.login()">
       </div>
-      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:2px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#e2e8f0">
-          <input type="checkbox" id="rememberSession" checked>
-          <span>تذكر الجلسة على هذا الجهاز</span>
-        </label>
-        <button class="btn btn-ghost" style="min-width:130px" type="button" onclick="AuthMgr.signUp()">إنشاء حساب</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+        <button class="btn btn-primary" id="loginBtn" style="width:100%;padding:12px;font-size:14px" onclick="AuthMgr.login()">تسجيل الدخول</button>
+        <button class="btn btn-secondary" id="signupBtn" style="width:100%;padding:12px;font-size:14px" onclick="AuthMgr.signUp()">إنشاء حساب</button>
       </div>
-      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:14px;margin-top:6px" onclick="AuthMgr.login()">دخول 🚀</button>
-      <div id="loginStatus" style="min-height:20px;font-size:12px;color:#cbd5e1;text-align:center;margin-top:8px"></div>
+      <div id="loginStatus" style="margin-top:10px;font-size:12px;line-height:1.8;color:rgba(255,255,255,.82)"></div>
     </div>
-    <div style="font-size:10.5px;color:rgba(255,255,255,.22);margin-top:16px">Supabase Auth · Session Lock · Multi-user ready</div>
+    <div style="font-size:10.5px;color:rgba(255,255,255,.22);margin-top:16px">v9.2 · Supabase Auth · IndexedDB Sync</div>
   </div>
 </div>
 
@@ -1060,8 +1056,7 @@ body.classroom-mode #enterClassroomBtn{display:none!important}
       
       
       <button class="nav-item" onclick="toggleTheme()"><span class="nav-icon">🌙</span> الوضع الليلي</button>
-      <button class="nav-item" onclick="AuthMgr.lock()" style="color:#f59e0b;margin-top:12px"><span class="nav-icon" style="background:rgba(245,158,11,.12)">🔒</span> قفل التطبيق</button>
-      <button class="nav-item" onclick="AuthMgr.logout()" style="color:#ef4444"><span class="nav-icon" style="background:rgba(239,68,68,.1)">🚪</span> تسجيل الخروج</button>
+      <button class="nav-item" onclick="AuthMgr.logout()" style="color:#ef4444;margin-top:12px"><span class="nav-icon" style="background:rgba(239,68,68,.1)">🚪</span> تسجيل الخروج</button>
     </nav>
   </aside>
 
@@ -2422,6 +2417,8 @@ async function safeInitApp() {
 
 const Store = (() => {
   const db = localforage.createInstance({ name: 'edu_platform_v8', storeName: 'data' });
+  const SYS_PREFIX = '__sys__';
+  const isSystemKey = (key) => String(key || '').startsWith(SYS_PREFIX);
   return {
     async get(key, defaultVal = null) {
       try { const v = await db.getItem(key); return v !== null ? v : defaultVal; }
@@ -2431,19 +2428,72 @@ const Store = (() => {
       try {
         await db.setItem(key, value);
         showSyncStatus();
-        SyncMgr.queueSync(key, value);
+        if (window.SyncMgr && typeof SyncMgr.markDirty === 'function') SyncMgr.markDirty(key);
       } catch(e) { console.error('Store.set', e); }
     },
-    async remove(key) { try { await db.removeItem(key); } catch {} },
+    async remove(key) {
+      try {
+        await db.removeItem(key);
+        if (window.SyncMgr && typeof SyncMgr.markDirty === 'function') SyncMgr.markDirty(key);
+      } catch {}
+    },
     async keys() { try { return await db.keys(); } catch { return []; } },
     async exportAll() {
       const keys = await this.keys();
       const data = {};
-      for (const k of keys) { data[k] = await this.get(k); }
+      for (const k of keys) {
+        if (isSystemKey(k)) continue;
+        data[k] = await this.get(k);
+      }
       return data;
     },
-    async importAll(data) { for (const [k, v] of Object.entries(data)) { await this.set(k, v); } },
-    async clear() { try { await db.clear(); } catch {} }
+    async importAll(data, options = {}) {
+      const { clearMissing = false, remote = false } = options;
+      const prev = window.__REMOTE_APPLY__;
+      window.__REMOTE_APPLY__ = !!remote;
+      try {
+        if (clearMissing) {
+          const keys = await this.keys();
+          for (const k of keys) {
+            if (!isSystemKey(k)) await db.removeItem(k);
+          }
+        }
+        for (const [k, v] of Object.entries(data || {})) {
+          if (!isSystemKey(k)) await db.setItem(k, v);
+        }
+      } finally {
+        window.__REMOTE_APPLY__ = prev;
+      }
+    },
+    async clear(options = {}) {
+      const { keepSystem = true, remote = false } = options;
+      const prev = window.__REMOTE_APPLY__;
+      window.__REMOTE_APPLY__ = !!remote;
+      try {
+        if (!keepSystem) {
+          await db.clear();
+        } else {
+          const keys = await this.keys();
+          for (const k of keys) {
+            if (!isSystemKey(k)) await db.removeItem(k);
+          }
+        }
+        if (window.SyncMgr && typeof SyncMgr.markDirty === 'function' && !remote) SyncMgr.markDirty('__clear__');
+      } catch {}
+      finally { window.__REMOTE_APPLY__ = prev; }
+    },
+    async getSystem(key, defaultVal = null) {
+      return this.get(SYS_PREFIX + key, defaultVal);
+    },
+    async setSystem(key, value) {
+      try { await db.setItem(SYS_PREFIX + key, value); }
+      catch (e) { console.error('Store.setSystem', e); }
+    },
+    async removeSystem(key) {
+      try { await db.removeItem(SYS_PREFIX + key); }
+      catch {}
+    },
+    isSystemKey
   };
 })();
 
@@ -2459,146 +2509,201 @@ function showSyncStatus() {
 //  SYNC MANAGER — مزامنة حقيقية مع Google Sheets
 // ══════════════════════════════════════════════════════════
 const SyncMgr = {
-  _queue: {},
   _timer: null,
   _online: navigator.onLine,
   _syncing: false,
+  _dirty: false,
+  _bootstrapped: false,
 
   init() {
-    window.addEventListener('online',  () => { this._online = true;  this._updateIndicator(); this.flushQueue(); });
-    window.addEventListener('offline', () => { this._online = false; this._updateIndicator(); });
+    window.addEventListener('online', async () => {
+      this._online = true;
+      this._updateIndicator();
+      if (AuthMgr.isAuthenticated()) {
+        await this.flushQueue('online');
+      }
+    });
+    window.addEventListener('offline', () => {
+      this._online = false;
+      this._updateIndicator();
+      this._showSyncBadge('📴 وضع غير متصل — يتم الحفظ محليًا مؤقتًا', 'warning');
+    });
     this._updateIndicator();
-    // تم تعطيل السحب التلقائي مؤقتاً لتفادي تعليق المنصة عند التشغيل
   },
 
   _updateIndicator() {
     const el = document.getElementById('syncIndicator');
     if (!el) return;
-    el.innerHTML = this._online
-      ? '🟢 <span>متصل</span>'
-      : '🔴 <span>غير متصل</span>';
+    el.innerHTML = this._online ? '🟢 <span>متصل</span>' : '🔴 <span>غير متصل</span>';
     el.style.color = this._online ? 'var(--success)' : 'var(--danger)';
   },
 
-  // اختبار الاتصال
-  async testConnection() {
-    UI.toast('⏳ جارٍ اختبار الاتصال...', 'info');
-    try {
-      const res = await fetch(`${SHEET_API_URL}?action=test`);
-      const json = await res.json();
-      if (json.ok) {
-        UI.toast('✅ الاتصال بـ Google Sheets يعمل بشكل مثالي!', 'success');
-        this._showSyncBadge('✅ متصل بالسحابة', 'success');
-      } else {
-        UI.toast('⚠️ ' + (json.error || 'خطأ غير معروف'), 'warning');
-      }
-    } catch(e) {
-      UI.toast('❌ فشل الاتصال — تأكد من Deploy settings', 'error');
-      console.error(e);
-    }
+  shouldQueueSync(key) {
+    return !window.__REMOTE_APPLY__ && !!key && !Store.isSystemKey(key) && AuthMgr.isAuthenticated();
   },
 
-  // إضافة مفتاح لقائمة الانتظار وإرسال بعد 1.5 ثانية (debounce)
-  queueSync(key, value) {
-    this._queue[key] = value;
+  markDirty(key) {
+    if (!this.shouldQueueSync(key)) return;
+    this._dirty = true;
+    this._showSyncBadge('⏳ تغييرات محلية — ستتم المزامنة تلقائيًا', 'info');
     clearTimeout(this._timer);
-    this._timer = setTimeout(() => this.flushQueue(), 1500);
+    this._timer = setTimeout(() => this.flushQueue('debounce'), 1400);
   },
 
-  // إرسال كل المفاتيح المنتظرة دفعة واحدة
-  async flushQueue() {
-    if (!this._online || this._syncing || Object.keys(this._queue).length === 0) return;
+  async _getClient() {
+    if (!window.SB || typeof window.SB.getClient !== 'function') return null;
+    return window.SB.getClient();
+  },
+
+  async _getUser() {
+    if (!window.SB || typeof window.SB.getUser !== 'function') return null;
+    return window.SB.getUser();
+  },
+
+  async _fetchRemoteRow() {
+    const client = await this._getClient();
+    const user = await this._getUser();
+    if (!client || !user) return null;
+    const { data, error } = await client
+      .from('app_snapshots')
+      .select('id, owner_id, snapshot_key, payload, updated_at, app_version, device_label')
+      .eq('owner_id', user.id)
+      .eq('snapshot_key', 'main')
+      .maybeSingle();
+    if (error) throw error;
+    return data || null;
+  },
+
+  async hasMeaningfulLocalData() {
+    const keys = (await Store.keys()).filter(k => !Store.isSystemKey(k));
+    return keys.length > 0;
+  },
+
+  async bootstrap() {
+    if (!AuthMgr.isAuthenticated()) return;
+    const localMeta = await Store.getSystem('last_remote_at', '');
+    try {
+      const remote = await this._fetchRemoteRow();
+      const hasLocal = await this.hasMeaningfulLocalData();
+      if (remote && remote.payload && (!hasLocal || (remote.updated_at && remote.updated_at !== localMeta))) {
+        this._showSyncBadge('🔄 جارٍ تحميل بياناتك السحابية...', 'info');
+        await Store.clear({ keepSystem: true, remote: true });
+        await Store.importAll(remote.payload || {}, { clearMissing: false, remote: true });
+        await Store.setSystem('last_remote_at', remote.updated_at || new Date().toISOString());
+        await Store.setSystem('last_sync_reason', 'pull');
+        this._bootstrapped = true;
+        this._dirty = false;
+        this._showSyncBadge('✅ تم تحميل بياناتك من السحابة', 'success');
+        return 'pulled';
+      }
+      if (!remote && hasLocal) {
+        await this.flushQueue('bootstrap-push');
+        this._bootstrapped = true;
+        return 'pushed';
+      }
+      this._bootstrapped = true;
+      this._showSyncBadge(remote ? '✅ البيانات متزامنة' : '☁️ لا توجد نسخة سحابية بعد', 'info');
+      return 'noop';
+    } catch (e) {
+      console.error('SyncMgr.bootstrap', e);
+      this._showSyncBadge('⚠️ تعذر التحقق من السحابة. ستواصل العمل محليًا مؤقتًا', 'warning');
+      return 'error';
+    }
+  },
+
+  async uploadSnapshot(reason = 'auto') {
+    if (!this._online || this._syncing || !AuthMgr.isAuthenticated()) return false;
     this._syncing = true;
-    const batch = { ...this._queue };
-    this._queue = {};
     try {
-      const res = await fetch(SHEET_API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'setAll', data: batch })
-      });
-      const json = await res.json();
-      if (json.ok) {
-        this._showSyncBadge('✅ محفوظ في السحابة', 'success');
-      } else {
-        this._requeueBatch(batch);
-        this._showSyncBadge('⚠️ خطأ في المزامنة', 'warning');
-      }
-    } catch {
-      this._requeueBatch(batch);
-      this._showSyncBadge('📴 انتظار الاتصال...', 'warning');
-    }
-    this._syncing = false;
-  },
-
-  _requeueBatch(batch) {
-    this._queue = { ...batch, ...this._queue };
-  },
-
-  // جلب البيانات من Google Sheets وتحديث المحلية
-  async pullFromSheets() {
-    if (!this._online) return;
-    try {
-      this._showSyncBadge('🔄 جارٍ المزامنة...', 'info');
-      const res = await fetch(`${SHEET_API_URL}?action=getAll`);
-      const json = await res.json();
-      if (json.ok && json.data && Object.keys(json.data).length > 0) {
-        const db = localforage.createInstance({ name: 'edu_platform_v8', storeName: 'data' });
-        const localKeys = await db.keys();
-        // نحدّث فقط المفاتيح الموجودة في Sheets ولا تتعارض مع بيانات محلية أحدث
-        for (const [k, v] of Object.entries(json.data)) {
-          if (!localKeys.includes(k)) {
-            await db.setItem(k, v);
-          }
-        }
-        this._showSyncBadge('✅ تمت المزامنة', 'success');
-        // إعادة تحميل إذا كانت بيانات جديدة
-        await refreshCurrentTab();
-      } else {
-        this._showSyncBadge('☁️ لا بيانات سحابية بعد', 'info');
-      }
-    } catch {
-      this._showSyncBadge('📴 تعذّر الاتصال بالسحابة', 'warning');
+      const client = await this._getClient();
+      const user = await this._getUser();
+      if (!client || !user) return false;
+      const payload = await Store.exportAll();
+      const row = {
+        owner_id: user.id,
+        snapshot_key: 'main',
+        payload,
+        app_version: 'v9.2',
+        device_label: (navigator.userAgent || 'web').slice(0, 120)
+      };
+      const { data, error } = await client
+        .from('app_snapshots')
+        .upsert(row, { onConflict: 'owner_id,snapshot_key' })
+        .select('updated_at')
+        .single();
+      if (error) throw error;
+      await Store.setSystem('last_remote_at', data?.updated_at || new Date().toISOString());
+      await Store.setSystem('last_sync_reason', reason);
+      this._dirty = false;
+      this._showSyncBadge('✅ تم الحفظ في السحابة', 'success');
+      return true;
+    } catch (e) {
+      console.error('SyncMgr.uploadSnapshot', e);
+      this._dirty = true;
+      this._showSyncBadge('⚠️ تعذر رفع التغييرات. ستتم إعادة المحاولة', 'warning');
+      return false;
+    } finally {
+      this._syncing = false;
     }
   },
 
-  // نسخ احتياطي كامل يدوي
+  async flushQueue(reason = 'auto') {
+    if (!this._dirty && reason !== 'bootstrap-push') return false;
+    return this.uploadSnapshot(reason);
+  },
+
+  async pullFromCloud(force = false) {
+    if (!AuthMgr.isAuthenticated()) throw new Error('سجل الدخول أولًا');
+    const remote = await this._fetchRemoteRow();
+    if (!remote || !remote.payload) throw new Error('لا توجد نسخة سحابية');
+    const localMeta = await Store.getSystem('last_remote_at', '');
+    if (!force && remote.updated_at && localMeta && remote.updated_at === localMeta) {
+      this._showSyncBadge('✅ لديك أحدث نسخة بالفعل', 'info');
+      return false;
+    }
+    await Store.clear({ keepSystem: true, remote: true });
+    await Store.importAll(remote.payload || {}, { remote: true });
+    await Store.setSystem('last_remote_at', remote.updated_at || new Date().toISOString());
+    await Store.setSystem('last_sync_reason', 'manual-pull');
+    this._dirty = false;
+    this._showSyncBadge('✅ تم استرجاع النسخة السحابية', 'success');
+    setTimeout(() => location.reload(), 700);
+    return true;
+  },
+
   async forceFullBackup() {
     if (!this._online) { UI.toast('لا يوجد اتصال بالإنترنت', 'error'); return; }
     UI.toast('⏳ جارٍ رفع النسخة الكاملة...', 'info');
-    try {
-      const allData = await Store.exportAll();
-      const res = await fetch(SHEET_API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'setAll', data: allData })
-      });
-      const json = await res.json();
-      if (json.ok) UI.toast(`✅ تم رفع ${json.count} مفتاح إلى Google Sheets`, 'success');
-      else UI.toast('❌ فشل الرفع: ' + (json.error || ''), 'error');
-    } catch(e) {
-      UI.toast('❌ خطأ في الاتصال', 'error');
-      console.error(e);
-    }
+    const ok = await this.uploadSnapshot('manual-backup');
+    if (ok) UI.toast('✅ تم رفع النسخة الكاملة', 'success');
+    else UI.toast('❌ فشل رفع النسخة الكاملة', 'error');
   },
 
-  // استعادة كاملة من السحابة (تستبدل المحلية)
   async forceFullRestore() {
     if (!this._online) { UI.toast('لا يوجد اتصال بالإنترنت', 'error'); return; }
     if (!confirm('سيتم استبدال جميع البيانات المحلية ببيانات السحابة. هل أنت متأكد؟')) return;
     UI.toast('⏳ جارٍ الاستعادة من السحابة...', 'info');
     try {
-      const res = await fetch(`${SHEET_API_URL}?action=getAll`);
-      const json = await res.json();
-      if (json.ok && json.data) {
-        await Store.clear();
-        const db = localforage.createInstance({ name: 'edu_platform_v8', storeName: 'data' });
-        for (const [k, v] of Object.entries(json.data)) { await db.setItem(k, v); }
-        UI.toast(`✅ تمت الاستعادة: ${Object.keys(json.data).length} مفتاح`, 'success');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        UI.toast('❌ لا توجد بيانات في السحابة', 'error');
-      }
+      await this.pullFromCloud(true);
+    } catch (e) {
+      UI.toast('❌ ' + (e.message || 'تعذرت الاستعادة'), 'error');
+    }
+  },
+
+  async testConnection() {
+    UI.toast('⏳ جارٍ اختبار الاتصال...', 'info');
+    try {
+      const client = await this._getClient();
+      const user = await this._getUser();
+      if (!client) throw new Error('Supabase غير جاهز');
+      if (!user) throw new Error('المستخدم غير مسجل الدخول');
+      const { error } = await client.from('app_snapshots').select('id').eq('owner_id', user.id).limit(1);
+      if (error) throw error;
+      UI.toast('✅ الاتصال بـ Supabase يعمل بشكل صحيح', 'success');
+      this._showSyncBadge('✅ متصل بالسحابة', 'success');
     } catch(e) {
-      UI.toast('❌ خطأ: ' + e.message, 'error');
+      UI.toast('❌ ' + (e.message || 'فشل الاتصال'), 'error');
+      console.error(e);
     }
   },
 
@@ -2613,7 +2718,6 @@ const SyncMgr = {
     window._syncBadgeTimer = setTimeout(() => { el.style.display = 'none'; }, 3000);
   }
 };
-
 // للتوافق مع الكود القديم
 const SheetSync = {
   forceBackup: () => SyncMgr.forceFullBackup()
@@ -2650,281 +2754,211 @@ const State = {
 // UUID generator
 function uuid() { return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0; return (c=='x'?r:(r&0x3|0x8)).toString(16); }); }
 
-
 // ══════════════════════════════════════════════════════════
-//  AUTH MODULE — Supabase Auth Gate + Session Lock
+//  AUTH MODULE
 // ══════════════════════════════════════════════════════════
-const AppAuth = (() => {
-  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
-  const UNLOCK_KEY = 'auth_local_unlock';
-  const LOCKED_KEY = 'auth_tab_locked';
-  const REMEMBER_KEY = 'auth_remember_device';
-  const LAST_SYNC_KEY = 'cloud_last_sync_at';
-  const IDLE_MS = 1000 * 60 * 20;
-  let client = null;
-  let idleTimer = null;
-  let booted = false;
-  let currentUser = null;
+const AuthMgr = {
+  user: null,
+  _appReady: false,
+  _idleTimer: null,
+  idleMs: 20 * 60 * 1000,
 
-  function initClient(){
-    if (client) return client;
-    if (!window.supabase || !window.supabase.createClient) throw new Error('لم يتم تحميل مكتبة Supabase');
-    client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
-      }
-    });
-    return client;
-  }
+  isAuthenticated() {
+    return !!this.user;
+  },
 
-  function setLoginStatus(msg, type='info'){
+  setLoginStatus(msg, type = 'info') {
     const el = document.getElementById('loginStatus');
     if (!el) return;
-    const colors = { info:'#cbd5e1', success:'#86efac', error:'#fca5a5', warn:'#fde68a' };
+    const colors = {
+      info: 'rgba(255,255,255,.82)',
+      success: '#86efac',
+      error: '#fca5a5',
+      warning: '#fde68a'
+    };
     el.textContent = msg || '';
     el.style.color = colors[type] || colors.info;
-  }
+  },
 
-  function showLogin(msg=''){
+  setLoginBusy(busy) {
+    ['loginBtn','signupBtn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = !!busy;
+    });
+  },
+
+  showLogin() {
     const login = document.getElementById('loginScreen');
     const app = document.getElementById('appLayout');
-    if (app) app.style.display = 'none';
     if (login) login.style.display = 'flex';
-    if (msg) setLoginStatus(msg, 'warn');
-  }
+    if (app) app.style.display = 'none';
+  },
 
-  function showApp(){
+  showApp() {
     const login = document.getElementById('loginScreen');
     const app = document.getElementById('appLayout');
     if (login) login.style.display = 'none';
     if (app) app.style.display = 'flex';
-    setLoginStatus('');
-  }
+  },
 
-  function markUnlocked(remember){
-    sessionStorage.setItem(UNLOCK_KEY, '1');
-    sessionStorage.removeItem(LOCKED_KEY);
-    localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
-  }
-
-  function clearUnlockFlags(){
-    sessionStorage.removeItem(UNLOCK_KEY);
-    sessionStorage.setItem(LOCKED_KEY, '1');
-  }
-
-  function isUnlocked(){
-    return sessionStorage.getItem(UNLOCK_KEY) === '1';
-  }
-
-  function shouldAutoUnlock(){
-    return localStorage.getItem(REMEMBER_KEY) === '1' && sessionStorage.getItem(LOCKED_KEY) !== '1';
-  }
-
-  async function getSession(){
-    const sb = initClient();
-    const { data, error } = await sb.auth.getSession();
-    if (error) throw error;
-    return data.session || null;
-  }
-
-  async function getUser(){
-    const session = await getSession();
-    currentUser = session ? session.user : null;
-    return currentUser;
-  }
-
-  async function ensureProfile(user){
-    if (!user) return;
-    try{
-      const sb = initClient();
-      await sb.from('profiles').upsert({
-        id: user.id,
-        email: user.email || null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
-    }catch(e){
-      console.warn('ensureProfile', e);
-    }
-  }
-
-  function attachActivityWatch(){
-    if (window.__authActivityBound) return;
-    window.__authActivityBound = true;
-    const bump = ()=>{
-      if (!isUnlocked()) return;
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(()=>lock('تم قفل التطبيق بعد فترة خمول.'), IDLE_MS);
-    };
-    ['click','keydown','pointerdown','touchstart','mousemove','scroll'].forEach(evt=>{
-      window.addEventListener(evt, bump, { passive:true });
-    });
-    bump();
-  }
-
-  async function lock(msg='تم قفل التطبيق.'){
-    clearUnlockFlags();
-    showLogin(msg);
-    try{
-      const pass = document.getElementById('login-pass');
-      if (pass) pass.value = '';
-    }catch{}
-  }
-
-  async function unlockFromCredentials(mode='signin'){
-    const email = (document.getElementById('login-email')?.value || '').trim();
-    const password = document.getElementById('login-pass')?.value || '';
-    const remember = !!document.getElementById('rememberSession')?.checked;
-    if (!email || !password) {
-      setLoginStatus('أدخل البريد وكلمة المرور.', 'error');
-      return false;
-    }
-    setLoginStatus(mode === 'signup' ? 'جارٍ إنشاء الحساب...' : 'جارٍ تسجيل الدخول...', 'info');
-    const sb = initClient();
-    let error = null;
-    if (mode === 'signup') {
-      ({ error } = await sb.auth.signUp({ email, password }));
-      if (error) throw error;
-      const session = await getSession();
-      if (!session) {
-        setLoginStatus('تم إنشاء الحساب. إن كان تأكيد البريد مفعلاً فافتح بريدك ثم ادخل.', 'success');
-        return false;
-      }
+  renderIdentity() {
+    const name = this.user?.email || 'مستخدم';
+    const header = document.getElementById('tabTitle');
+    if (header && !document.getElementById('authUserChip')) {
+      const chip = document.createElement('span');
+      chip.id = 'authUserChip';
+      chip.style.cssText = 'margin-inline-start:10px;font-size:11px;background:rgba(79,70,229,.08);color:#4338ca;border:1px solid rgba(79,70,229,.14);padding:6px 10px;border-radius:999px;vertical-align:middle';
+      chip.textContent = name;
+      header.parentNode && header.parentNode.insertBefore(chip, header.nextSibling);
     } else {
-      ({ error } = await sb.auth.signInWithPassword({ email, password }));
-      if (error) throw error;
+      const chip = document.getElementById('authUserChip');
+      if (chip) chip.textContent = name;
     }
-    const user = await getUser();
-    if (!user) throw new Error('تعذر جلب المستخدم الحالي.');
-    await ensureProfile(user);
-    markUnlocked(remember);
-    attachActivityWatch();
-    showApp();
-    if (!booted) {
-      await safeInitApp();
-      booted = true;
+  },
+
+  async ensureAppReady() {
+    this.showApp();
+    this.renderIdentity();
+    if (!this._appReady) {
+      const ok = await safeInitApp();
+      if (!ok) return false;
+      this._appReady = true;
     }
-    setLoginStatus('');
+    if (window.SyncMgr && typeof SyncMgr.bootstrap === 'function') {
+      await SyncMgr.bootstrap();
+    }
+    this.armIdleLock();
     return true;
-  }
+  },
 
-  async function boot(){
-    try{
-      initClient();
-      const user = await getUser();
-      if (!user) {
-        showLogin('سجل الدخول أولاً.');
-        return;
-      }
-      await ensureProfile(user);
-      if (isUnlocked() || shouldAutoUnlock()) {
-        markUnlocked(localStorage.getItem(REMEMBER_KEY) === '1');
-        attachActivityWatch();
-        showApp();
-        if (!booted) {
-          await safeInitApp();
-          booted = true;
-        }
-      } else {
-        showLogin('الجلسة موجودة لكن التطبيق مقفول. أعد إدخال كلمة المرور.');
-      }
-    }catch(e){
-      console.error('AppAuth.boot', e);
-      showLogin('تعذر تهيئة المصادقة.');
-      setLoginStatus(e.message || 'تعذر تهيئة المصادقة.', 'error');
+  armIdleLock() {
+    const reset = () => {
+      clearTimeout(this._idleTimer);
+      if (!this.isAuthenticated()) return;
+      this._idleTimer = setTimeout(() => this.lock(), this.idleMs);
+    };
+    if (!window.__AUTH_IDLE_BOUND__) {
+      ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => window.addEventListener(evt, reset, { passive: true }));
+      window.__AUTH_IDLE_BOUND__ = true;
     }
-  }
+    reset();
+  },
 
-  async function signOut(full=true){
-    clearUnlockFlags();
-    localStorage.setItem(REMEMBER_KEY, '0');
-    if (full) {
-      try {
-        const sb = initClient();
-        await sb.auth.signOut();
-      } catch(e) {
-        console.warn('signOut', e);
-      }
-    }
-    location.reload();
-  }
-
-  async function changePassword(){
-    const np = document.getElementById('new-password')?.value.trim();
-    if (!np || np.length < 6) {
-      UI.toast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+  async boot() {
+    this.showLogin();
+    this.setLoginStatus('');
+    if (!window.SB) {
+      this.setLoginStatus('مكتبة Supabase غير جاهزة', 'error');
       return;
     }
     try {
-      const sb = initClient();
-      const { error } = await sb.auth.updateUser({ password: np });
-      if (error) throw error;
+      const session = await window.SB.getSession();
+      if (session?.user && sessionStorage.getItem('auth_locked') !== '1') {
+        this.user = session.user;
+        sessionStorage.setItem('auth_ok', '1');
+        await this.ensureAppReady();
+      } else {
+        this.showLogin();
+      }
+    } catch (e) {
+      console.error('Auth boot', e);
+      this.setLoginStatus('تعذر استعادة الجلسة', 'error');
+      this.showLogin();
+    }
+  },
+
+  async login() {
+    const email = document.getElementById('login-email')?.value.trim();
+    const password = document.getElementById('login-pass')?.value || '';
+    if (!email || !password) {
+      this.setLoginStatus('أدخل البريد الإلكتروني وكلمة المرور', 'warning');
+      return;
+    }
+    this.setLoginBusy(true);
+    this.setLoginStatus('جارٍ تسجيل الدخول...');
+    try {
+      const { user } = await window.SB.signIn(email, password);
+      this.user = user;
+      sessionStorage.removeItem('auth_locked');
+      sessionStorage.setItem('auth_ok', '1');
+      this.setLoginStatus('تم تسجيل الدخول', 'success');
+      await this.ensureAppReady();
+    } catch (e) {
+      console.error('Auth login', e);
+      this.setLoginStatus(e.message || 'فشل تسجيل الدخول', 'error');
+      const pass = document.getElementById('login-pass');
+      if (pass) pass.value = '';
+    } finally {
+      this.setLoginBusy(false);
+    }
+  },
+
+  async signUp() {
+    const email = document.getElementById('login-email')?.value.trim();
+    const password = document.getElementById('login-pass')?.value || '';
+    if (!email || !password) {
+      this.setLoginStatus('أدخل البريد الإلكتروني وكلمة المرور أولًا', 'warning');
+      return;
+    }
+    if (password.length < 6) {
+      this.setLoginStatus('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'warning');
+      return;
+    }
+    this.setLoginBusy(true);
+    this.setLoginStatus('جارٍ إنشاء الحساب...');
+    try {
+      const result = await window.SB.signUp(email, password);
+      if (result?.session && result?.user) {
+        this.user = result.user;
+        sessionStorage.removeItem('auth_locked');
+        sessionStorage.setItem('auth_ok', '1');
+        this.setLoginStatus('تم إنشاء الحساب وتسجيل الدخول', 'success');
+        await this.ensureAppReady();
+      } else {
+        this.setLoginStatus('تم إنشاء الحساب. افتح بريدك إن كان التأكيد مفعّلًا', 'success');
+      }
+    } catch (e) {
+      console.error('Auth signUp', e);
+      this.setLoginStatus(e.message || 'فشل إنشاء الحساب', 'error');
+    } finally {
+      this.setLoginBusy(false);
+    }
+  },
+
+  lock() {
+    if (!this.isAuthenticated()) return;
+    sessionStorage.setItem('auth_locked', '1');
+    this.showLogin();
+    this.setLoginStatus('تم قفل التطبيق بسبب الخمول. أدخل كلمة المرور للمتابعة.', 'warning');
+    const pass = document.getElementById('login-pass');
+    if (pass) pass.value = '';
+  },
+
+  async logout() {
+    try {
+      if (window.SyncMgr) await SyncMgr.flushQueue('logout');
+      await window.SB.signOut();
+    } catch (e) {
+      console.error('Auth logout', e);
+    } finally {
+      this.user = null;
+      sessionStorage.removeItem('auth_ok');
+      sessionStorage.removeItem('auth_locked');
+      location.reload();
+    }
+  },
+
+  async changePassword() {
+    const np = document.getElementById('new-password')?.value.trim();
+    if (!np || np.length < 6) { UI.toast('كلمة المرور قصيرة جداً', 'error'); return; }
+    try {
+      await window.SB.updatePassword(np);
       document.getElementById('new-password').value = '';
       UI.toast('تم تغيير كلمة المرور', 'success');
-    } catch(e) {
+    } catch (e) {
       UI.toast(e.message || 'تعذر تغيير كلمة المرور', 'error');
     }
   }
-
-  async function exportStorePayload(){
-    const data = await Store.exportAll();
-    return {
-      app_version: '10.0',
-      exported_at: new Date().toISOString(),
-      data
-    };
-  }
-
-  async function importStorePayload(payload){
-    const raw = payload && payload.data ? payload.data : payload;
-    if (!raw || typeof raw !== 'object') throw new Error('البيانات السحابية غير صالحة');
-    await Store.importAll(raw);
-  }
-
-  async function pushCloud(){
-    const sb = initClient();
-    const user = await getUser();
-    if (!user) throw new Error('سجل الدخول أولاً');
-    const payload = await exportStorePayload();
-    const { error } = await sb.from('app_snapshots').upsert({
-      owner_id: user.id,
-      snapshot_key: 'main',
-      payload,
-      app_version: '10.0',
-      device_label: navigator.userAgent.slice(0,120)
-    }, { onConflict: 'owner_id,snapshot_key' });
-    if (error) throw error;
-    localStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
-    return true;
-  }
-
-  async function pullCloud(){
-    const sb = initClient();
-    const user = await getUser();
-    if (!user) throw new Error('سجل الدخول أولاً');
-    const { data, error } = await sb.from('app_snapshots').select('payload,updated_at').eq('owner_id', user.id).eq('snapshot_key','main').single();
-    if (error) throw error;
-    await importStorePayload(data.payload || {});
-    localStorage.setItem(LAST_SYNC_KEY, data.updated_at || new Date().toISOString());
-    return data;
-  }
-
-  return {
-    initClient, getUser, getSession, boot, lock, signOut, changePassword, ensureProfile, pushCloud, pullCloud,
-    login(){ return unlockFromCredentials('signin'); },
-    signUp(){ return unlockFromCredentials('signup'); },
-    isUnlocked
-  };
-})();
-
-const AuthMgr = {
-  login: () => AppAuth.login(),
-  signUp: () => AppAuth.signUp(),
-  logout: () => AppAuth.signOut(true),
-  lock: () => AppAuth.lock('تم قفل التطبيق يدوياً.'),
-  changePassword: () => AppAuth.changePassword()
 };
 
 // ══════════════════════════════════════════════════════════
@@ -3964,8 +3998,7 @@ const BackupMgr = {
     reader.readAsText(file); input.value = '';
   },
   async clearAll() {
-    await Store.clear();
-    location.reload();
+    await Store.clear(); sessionStorage.removeItem('auth_ok'); location.reload();
   },
   async saveSettings() {
     const teacher = getVal('setting-teacher'), school = getVal('setting-school');
@@ -6007,7 +6040,6 @@ async function runAfterTabChangeHooks(tabId){
 window.registerAfterTabChangeHook = registerAfterTabChangeHook;
 
 async function switchTab(tabId) {
-  if (window.AppAuth && !AppAuth.isUnlocked()) { AppAuth.lock('يلزم تسجيل الدخول أولاً.'); return; }
   tabId = TAB_ALIASES[tabId] || tabId;
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -6676,7 +6708,7 @@ window.addEventListener('load', async () => {
   Chart.defaults.font.family = "'Tajawal', sans-serif";
   setTimeout(async () => {
     document.getElementById('loadingScreen').style.display = 'none';
-    await AppAuth.boot();
+    await AuthMgr.boot();
   }, 900);
 });
 
@@ -6939,99 +6971,124 @@ setTimeout(updateMobileShell, 300);
   <div id="sbCloudStatus">جاهز.</div>
   <div class="muted">بعد تسجيل الدخول اضغط رفع لحفظ بيانات هذا الجهاز في Supabase، واضغط استرجاع على جهاز آخر لاستعادة نفس البيانات.</div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
+  const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRveGFjenp2anVjeHhqb3ZnaXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzUwMzUsImV4cCI6MjA4OTAxMTAzNX0.ODwr8kEbMu3FS_8V8Hxlh-jh5Vn9PRggMXQfRhxULno';
   const $ = (id)=>document.getElementById(id);
+
+  window.SB = {
+    client: null,
+    getClient(){
+      if (this.client) return this.client;
+      if (!window.supabase || !window.supabase.createClient) throw new Error('لم يتم تحميل مكتبة Supabase');
+      this.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      return this.client;
+    },
+    async getSession(){
+      const client = this.getClient();
+      const { data, error } = await client.auth.getSession();
+      if (error) throw error;
+      return data.session || null;
+    },
+    async getUser(){
+      const session = await this.getSession();
+      return session?.user || null;
+    },
+    async ensureProfile(user){
+      if (!user) return;
+      const client = this.getClient();
+      await client.from('profiles').upsert({ id: user.id, email: user.email || '' }, { onConflict: 'id' });
+    },
+    async signIn(email, password){
+      const client = this.getClient();
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await this.ensureProfile(data.user);
+      return data;
+    },
+    async signUp(email, password){
+      const client = this.getClient();
+      const { data, error } = await client.auth.signUp({ email, password });
+      if (error) throw error;
+      if (data?.user) await this.ensureProfile(data.user);
+      return data;
+    },
+    async signOut(){
+      const client = this.getClient();
+      const { error } = await client.auth.signOut();
+      if (error) throw error;
+    },
+    async updatePassword(password){
+      const client = this.getClient();
+      const { error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+    }
+  };
+
   function status(msg, err){
-    const el = $('sbCloudStatus');
-    if (el) {
-      el.textContent = msg;
-      el.style.color = err ? '#b91c1c' : '#334155';
-    }
+    const el=$('sbCloudStatus');
+    if(el){ el.textContent=msg; el.style.color = err ? '#b91c1c' : '#334155'; }
+    console[err?'error':'log']('[cloud]', msg);
   }
-  function setBusy(ids, busy){
-    ids.forEach(id=>{ const el=$(id); if (el) el.disabled = busy; });
-  }
-  function panel(open){
-    const el = $('sbCloudPanel');
-    if (!el) return;
-    el.classList.toggle('open', open);
-    el.setAttribute('aria-hidden', open ? 'false' : 'true');
-  }
+  function setBusy(ids, busy){ ids.forEach(id=>{ const el=$(id); if(el) el.disabled=busy; }); }
+  function panel(open){ const el=$('sbCloudPanel'); if(!el) return; el.classList.toggle('open', open); el.setAttribute('aria-hidden', open ? 'false' : 'true'); }
+
   async function signIn(){
-    try{
-      setBusy(['sbSignIn','sbSignUp'], true);
-      $('login-email').value = $('sbEmail').value.trim();
-      $('login-pass').value = $('sbPassword').value;
-      await AppAuth.login();
-      status('تم تسجيل الدخول وفتح التطبيق.');
-      panel(false);
-    }catch(e){
-      status(e.message || 'فشل تسجيل الدخول', true);
-    }finally{
-      setBusy(['sbSignIn','sbSignUp'], false);
-    }
+    try {
+      setBusy(['sbSignIn','sbSignUp'], true); status('جارٍ تسجيل الدخول...');
+      const email = $('sbEmail').value.trim(); const password = $('sbPassword').value;
+      await window.SB.signIn(email, password);
+      status('تم تسجيل الدخول.');
+      if ($('login-email') && !$('login-email').value) $('login-email').value = email;
+      if ($('login-pass') && !$('login-pass').value) $('login-pass').value = password;
+      await AuthMgr.boot();
+    } catch(e){ status(e.message || 'فشل تسجيل الدخول', true); }
+    finally{ setBusy(['sbSignIn','sbSignUp'], false); }
   }
   async function signUp(){
-    try{
-      setBusy(['sbSignIn','sbSignUp'], true);
-      $('login-email').value = $('sbEmail').value.trim();
-      $('login-pass').value = $('sbPassword').value;
-      const ok = await AppAuth.signUp();
-      status(ok ? 'تم إنشاء الحساب وفتح التطبيق.' : 'تم إنشاء الحساب. راجع بريدك إذا كان التأكيد مفعلاً.');
-    }catch(e){
-      status(e.message || 'فشل إنشاء الحساب', true);
-    }finally{
-      setBusy(['sbSignIn','sbSignUp'], false);
-    }
+    try {
+      setBusy(['sbSignIn','sbSignUp'], true); status('جارٍ إنشاء الحساب...');
+      const email = $('sbEmail').value.trim(); const password = $('sbPassword').value;
+      const res = await window.SB.signUp(email, password);
+      status(res?.session ? 'تم إنشاء الحساب وتسجيل الدخول.' : 'تم إنشاء الحساب. راجع بريدك إن كان التأكيد مفعلاً.');
+    } catch(e){ status(e.message || 'فشل إنشاء الحساب', true); }
+    finally{ setBusy(['sbSignIn','sbSignUp'], false); }
   }
   async function pushCloud(){
-    try{
-      setBusy(['sbPush','sbPull','sbTest'], true);
-      status('جارٍ رفع البيانات...');
-      await AppAuth.pushCloud();
-      status('تم رفع نسخة المستخدم الحالية إلى Supabase.');
-      if (window.UI && UI.toast) UI.toast('تم رفع النسخة السحابية', 'success');
-    }catch(e){
-      status(e.message || 'فشل الرفع', true);
-    }finally{
-      setBusy(['sbPush','sbPull','sbTest'], false);
-    }
+    try {
+      setBusy(['sbPush','sbPull','sbTest'], true); status('جارٍ رفع البيانات...');
+      if (!AuthMgr.isAuthenticated()) throw new Error('سجل الدخول أولاً');
+      const ok = await SyncMgr.uploadSnapshot('manual-panel');
+      if (!ok) throw new Error('فشل الرفع');
+      status('تم رفع البيانات إلى السحابة.');
+    } catch(e){ status(e.message || 'فشل الرفع', true); }
+    finally{ setBusy(['sbPush','sbPull','sbTest'], false); }
   }
   async function pullCloud(){
-    try{
-      setBusy(['sbPush','sbPull','sbTest'], true);
-      status('جارٍ استرجاع البيانات...');
-      await AppAuth.pullCloud();
+    try {
+      setBusy(['sbPush','sbPull','sbTest'], true); status('جارٍ استرجاع البيانات...');
+      await SyncMgr.pullFromCloud(true);
       status('تم الاسترجاع. سيعاد تحميل التطبيق الآن.');
-      setTimeout(()=>location.reload(), 700);
-    }catch(e){
-      status(e.message || 'فشل الاسترجاع', true);
-    }finally{
-      setBusy(['sbPush','sbPull','sbTest'], false);
-    }
+    } catch(e){ status(e.message || 'فشل الاسترجاع', true); }
+    finally{ setBusy(['sbPush','sbPull','sbTest'], false); }
   }
   async function testConnection(){
-    try{
-      setBusy(['sbPush','sbPull','sbTest'], true);
-      AppAuth.initClient();
-      const user = await AppAuth.getUser();
-      status(user ? ('متصل كمستخدم: ' + (user.email || user.id)) : 'المكتبة جاهزة. سجل الدخول لتفعيل السحابة.');
-    }catch(e){
-      status(e.message || 'تعذر الاتصال', true);
-    }finally{
-      setBusy(['sbPush','sbPull','sbTest'], false);
-    }
+    try {
+      setBusy(['sbPush','sbPull','sbTest'], true); status('جارٍ اختبار الاتصال...');
+      await SyncMgr.testConnection();
+      status('الاتصال مع Supabase يعمل.');
+    } catch(e){ status(e.message || 'تعذر الاتصال', true); }
+    finally{ setBusy(['sbPush','sbPull','sbTest'], false); }
   }
   async function signOut(){
-    try{
-      await AppAuth.signOut(true);
-    }catch(e){
-      status(e.message || 'تعذر تسجيل الخروج', true);
-    }
+    try {
+      status('جارٍ تسجيل الخروج...');
+      await AuthMgr.logout();
+    } catch(e){ status(e.message || 'تعذر تسجيل الخروج', true); }
   }
+
   document.addEventListener('DOMContentLoaded', function(){
     $('sbCloudFab')?.addEventListener('click', ()=>panel(!$('sbCloudPanel').classList.contains('open')));
     $('sbClose')?.addEventListener('click', ()=>panel(false));
@@ -7041,8 +7098,8 @@ setTimeout(updateMobileShell, 300);
     $('sbPull')?.addEventListener('click', pullCloud);
     $('sbTest')?.addEventListener('click', testConnection);
     $('sbSignOut')?.addEventListener('click', signOut);
+    try { window.SB.getClient(); } catch (e) { status(e.message || 'تعذر تهيئة Supabase', true); }
   });
-})();
 </script>
 
 </body>
