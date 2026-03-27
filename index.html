@@ -3483,97 +3483,7 @@ const Engine = {
 // ══════════════════════════════════════════════════════════
 //  IMPORT MANAGER
 // ══════════════════════════════════════════════════════════
-
 const ImportMgr = {
-  _toAsciiDigits(v) {
-    return String(v ?? '')
-      .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-      .replace(/[٫،]/g, '.');
-  },
-  _num(v) {
-    const s = this._toAsciiDigits(v).trim();
-    if (!s || s === '—' || s === '-') return NaN;
-    const n = parseFloat(s);
-    return isNaN(n) ? NaN : n;
-  },
-  _normName(v) {
-    return String(v || '')
-      .replace(/[أإآ]/g,'ا')
-      .replace(/ى/g,'ي')
-      .replace(/ة/g,'ه')
-      .replace(/ـ/g,'')
-      .replace(/[ً-ٟ]/g,'')
-      .replace(/\s+/g,' ')
-      .trim();
-  },
-  _sameName(a, b) {
-    const x = this._normName(a), y = this._normName(b);
-    return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
-  },
-  _extractMeta(aoa, sheetName='') {
-    const title = String(aoa?.[0]?.[0] || sheetName || '').trim();
-    const levelMatch = title.match(/(?:المستوى|niveau)\s*[:：]?\s*([456])/i) || String(sheetName).match(/[_-]L([456])/i);
-    const yearMatch  = title.match(/(20\d{2}\s*[-/]\s*20\d{2})/);
-    const source = `${title} ${sheetName}`;
-    let subject = null;
-    if (/اللغة\s*العربية|العربية/.test(source)) subject = 'arabic';
-    else if (/التربية\s*الإسلامية|الإسلامية/.test(source)) subject = 'islamic';
-    else if (/الاجتماعيات/.test(source)) subject = 'social';
-    else if (/التربية\s*الفنية|الفنية/.test(source)) subject = 'art';
-    else if (/التربية\s*البدنية|البدنية/.test(source)) subject = 'pe';
-    return {
-      title,
-      level: levelMatch ? levelMatch[1] : null,
-      year: yearMatch ? yearMatch[1].replace(/\s+/g,'') : null,
-      subject
-    };
-  },
-  _findHeaderRow(aoa) {
-    for (let i = 0; i < Math.min(10, aoa.length); i++) {
-      const row = (aoa[i] || []).map(v => String(v || '').trim());
-      const hasName = row.some(v => /^(الاسم|الإسم|اسم|nom)$/i.test(v) || v.includes('الاسم') || v.includes('إسم'));
-      const hasGrades = row.some(v => ['الفرض 1','الفرض 2','الفرض 3','الفرض 4','تاريخ ف1','تاريخ ف2','جغرافيا ف1','جغرافيا ف2','مدنية ف1','مدنية ف2','المعدل'].includes(v));
-      if (hasName && hasGrades) return i;
-    }
-    return -1;
-  },
-  _extractNamesFromAoa(aoa) {
-    const headerRow = this._findHeaderRow(aoa);
-    if (headerRow < 0) return [];
-    const headers = (aoa[headerRow] || []).map(v => String(v || '').trim());
-    const nameCol = headers.findIndex(v => /الاسم|إسم|اسم|nom/i.test(v));
-    if (nameCol < 0) return [];
-    const names = [];
-    for (let r = headerRow + 1; r < aoa.length; r++) {
-      const raw = String(aoa[r]?.[nameCol] || '').trim();
-      if (!raw || raw === '—' || raw === 'الاسم') continue;
-      if (raw.length >= 2) names.push(raw);
-    }
-    return [...new Set(names)];
-  },
-  async _applyMeta(meta) {
-    if (meta?.year && meta.year !== State.year) changeYear(meta.year);
-    if (meta?.level && meta.level !== State.level) changeLevel(meta.level);
-    if (meta?.subject) setVal('grade-subject', meta.subject);
-  },
-  async _ensurePupilsForCurrentLevel(names) {
-    if (!Array.isArray(names) || !names.length) return 0;
-    if (!PUPILS[State.level]) PUPILS[State.level] = [];
-    const existing = PupilMgr.getPupilNames();
-    let added = 0;
-    names.forEach(n => {
-      const already = existing.find(e => this._sameName(e, n));
-      if (!already) { PUPILS[State.level].push({ id: uuid(), name: String(n).trim() }); added++; existing.push(String(n).trim()); }
-    });
-    if (added) await PupilMgr.save();
-    return added;
-  },
-  _matchName(raw, pupils) {
-    const n = String(raw || '').trim();
-    if (!n || n.length < 2) return null;
-    return pupils.find(p => this._sameName(p, n)) || null;
-  },
-
   importPupils(input) {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -3582,53 +3492,43 @@ const ImportMgr = {
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-        const meta = this._extractMeta(aoa, wb.SheetNames[0]);
-        await this._applyMeta(meta);
-
-        let names = this._extractNamesFromAoa(aoa);
-
-        if (!names.length) {
-          const json = XLSX.utils.sheet_to_json(ws);
-          json.forEach(row => {
-            let name = '';
-            for (const key in row) {
-              if ((key.includes('اسم') || key.includes('نسب') || key.toLowerCase().includes('nom')) && typeof row[key] === 'string') { name = row[key]; break; }
-            }
-            if (!name) {
-              const v = Object.values(row).find(v => typeof v === 'string' && v.trim().includes(' '));
-              if (v) name = v;
-            }
-            if (name && name.trim().length > 2) names.push(name.trim());
-          });
-          names = [...new Set(names)];
-        }
-
-        const added = await this._ensurePupilsForCurrentLevel(names);
-        initDropdowns(); UI.renderSettingsPupils();
-        UI.toast(`تم استيراد ${added} متعلم جديد${meta.level ? ` — المستوى ${meta.level}` : ''}`, added ? 'success' : 'warning');
-      } catch(err) {
-        console.error(err);
-        UI.toast('خطأ في قراءة الملف', 'error');
-      }
+        const json = XLSX.utils.sheet_to_json(ws);
+        let names = [];
+        json.forEach(row => {
+          let name = '';
+          for (const key in row) {
+            if ((key.includes('اسم') || key.includes('نسب') || key.toLowerCase().includes('nom')) && typeof row[key] === 'string') { name = row[key]; break; }
+          }
+          if (!name) { const v = Object.values(row).find(v => typeof v === 'string' && v.trim().includes(' ')); if (v) name = v; }
+          if (name && name.trim().length > 2) names.push(name.trim());
+        });
+        names = [...new Set(names)];
+        if (!PUPILS[State.level]) PUPILS[State.level] = [];
+        const existing = PupilMgr.getPupilNames();
+        let added = 0;
+        names.forEach(n => { if (!existing.includes(n)) { PUPILS[State.level].push({ id: uuid(), name: n }); added++; } });
+        await PupilMgr.save(); initDropdowns(); UI.renderSettingsPupils();
+        UI.toast(`تم استيراد ${added} متعلم جديد`, 'success');
+      } catch { UI.toast('خطأ في قراءة الملف', 'error'); }
     };
     reader.readAsArrayBuffer(file); input.value = '';
   },
-
-  importFromPaste() {
+  async importFromPaste() {
     const text = document.getElementById('paste-names').value;
-    const names = text.split('
-').map(n => n.trim()).filter(n => n.length > 2);
-    this._ensurePupilsForCurrentLevel(names).then(added => {
-      initDropdowns(); UI.renderSettingsPupils();
-      UI.closeModal('pasteImportModal');
-      document.getElementById('paste-names').value = '';
-      UI.toast(`تم استيراد ${added} متعلم`, 'success');
-    });
+    const names = text.split('\n').map(n => n.trim()).filter(n => n.length > 2);
+    if (!PUPILS[State.level]) PUPILS[State.level] = [];
+    const existing = PupilMgr.getPupilNames();
+    let added = 0;
+    names.forEach(n => { if (!existing.includes(n)) { PUPILS[State.level].push({ id: uuid(), name: n }); added++; } });
+    await PupilMgr.save(); initDropdowns(); UI.renderSettingsPupils();
+    UI.closeModal('pasteImportModal');
+    document.getElementById('paste-names').value = '';
+    UI.toast(`تم استيراد ${added} متعلم`, 'success');
   },
-
+  // ── استيراد نقط (يدعم صيغة مسار وصيغة عادية) ────────────
   importGrades(input) {
     const file = input.files[0]; if (!file) return;
+    const subject = getVal('grade-subject') || 'arabic';
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -3636,29 +3536,35 @@ const ImportMgr = {
         const wb   = XLSX.read(data, { type: 'array' });
         const ws   = wb.Sheets[wb.SheetNames[0]];
         const aoa  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-        const meta = this._extractMeta(aoa, wb.SheetNames[0]);
-        await this._applyMeta(meta);
 
-        const subject = meta.subject || getVal('grade-subject') || 'arabic';
         const allG  = await DB.get('grades');
         if (!allG[subject]) allG[subject] = {};
-
-        const importedNames = this._extractNamesFromAoa(aoa);
-        await this._ensurePupilsForCurrentLevel(importedNames);
-
         const pupils = PupilMgr.getPupilNames();
         let mapped = 0;
         let fmt = 'عادية';
 
-        const matchName = (raw) => this._matchName(raw, pupils);
+        // ── helper: مطابقة اسم مع قائمة التلاميذ (مرنة) ──
+        const matchName = (raw) => {
+          const n = String(raw || '').trim();
+          if (!n || n.length < 2) return null;
+          return pupils.find(p =>
+            p === n ||
+            p.replace(/\s+/g,' ').trim() === n.replace(/\s+/g,' ').trim() ||
+            p.includes(n) || n.includes(p)
+          ) || null;
+        };
 
+        // ══ 1. صيغة مسار — "نقط المراقبة المستمرة" ══
         const firstCell = String(aoa[0]?.[3] || aoa[0]?.[0] || '');
         const isMassarNuqat = firstCell.includes('نقط المراقبة');
+
+        // ══ 2. صيغة دفتر الكفايات — "ملف الكفايات" ══
         const isLivret = String(aoa[0]?.[3] || aoa[0]?.[0] || '').includes('ملف الكفايات') ||
                          String(aoa[0]?.[3] || '').includes('ملف الكفايات');
 
         if (isMassarNuqat) {
           fmt = 'مسار — نقط';
+          // رأس مزدوج: سطر 5 (index4) + سطر 6 (index5)، بيانات من index 6
           const headerRow2 = aoa[5] || [];
           const GRADE_KEYS = {
             'الفرض 1':'t1','الفرض 2':'t2','الفرض 3':'t3','الفرض 4':'t4',
@@ -3677,33 +3583,43 @@ const ImportMgr = {
             if (!match) continue;
             if (!allG[subject][match]) allG[subject][match] = {};
             gradeColKeys.forEach(({ col, key }) => {
-              const v = this._num(row[col]);
+              const v = parseFloat(row[col]);
               if (!isNaN(v) && v >= 0 && v <= 20) { allG[subject][match][key] = v; mapped++; }
             });
           }
 
         } else if (isLivret) {
+          // ══ صيغة دفتر الكفايات (LivretsDeCompetences) ══
+          // Row 9  (index 9): أرقام مسار التلاميذ
+          // Row 10 (index 10): أسماء التلاميذ في col 4..N
+          // Rows 11+ : كفاية في col2 + نقاط في col4..N
           fmt = 'دفتر الكفايات';
           const namesRow = aoa[10] || [];
-          const pupilCols = [];
+          // col 4 → أول تلميذ، حتى آخر عمود غير فارغ
+          const pupilCols = []; // [{col, name}]
           for (let c = 4; c < namesRow.length; c++) {
             const raw = String(namesRow[c] || '').trim();
             if (!raw) continue;
             const match = matchName(raw);
             if (match) pupilCols.push({ col: c, name: match });
           }
-          const scores = {};
+
+          // جمع نقاط كل كفاية لكل تلميذ ثم احسب المعدل
+          const scores = {}; // name → [values]
           for (let r = 11; r < aoa.length; r++) {
             const row = aoa[r];
+            // تجاهل الصفوف الفارغة أو غير ذات الصلة
             if (!row.some(v => v !== '')) continue;
             pupilCols.forEach(({ col, name }) => {
-              const v = this._num(row[col]);
+              const v = parseFloat(row[col]);
               if (!isNaN(v) && v >= 0 && v <= 20) {
                 if (!scores[name]) scores[name] = [];
                 scores[name].push(v);
               }
             });
           }
+
+          // احفظ المعدل كـ t1 (يمكن تغييره لاحقاً)
           const targetKey = 't1';
           for (const [name, vals] of Object.entries(scores)) {
             if (!vals.length) continue;
@@ -3714,90 +3630,56 @@ const ImportMgr = {
           }
 
         } else {
-          const headerRowIdx = this._findHeaderRow(aoa);
-          const SIMPLE_KEYS = {
+          // ══ صيغة عادية ══
+          const json = XLSX.utils.sheet_to_json(ws);
+          const GRADE_KEYS_LABELS = {
             'الفرض 1':'t1','الفرض 2':'t2','الفرض 3':'t3','الفرض 4':'t4',
             'فرض 1':'t1','فرض 2':'t2','t1':'t1','t2':'t2','t3':'t3','t4':'t4',
             'تاريخ ف1':'h1','تاريخ ف2':'h2','جغرافيا ف1':'g1','جغرافيا ف2':'g2',
             'مدنية ف1':'c1','مدنية ف2':'c2',
           };
-
-          if (headerRowIdx >= 0) {
-            fmt = 'نموذج فروض مباشر';
-            const headers = (aoa[headerRowIdx] || []).map(v => String(v || '').trim());
-            const nameCol = headers.findIndex(v => /الاسم|إسم|اسم|nom/i.test(v));
-            const gradeCols = headers.map((h, idx) => ({ idx, key: SIMPLE_KEYS[h] })).filter(x => x.key);
-            for (let r = headerRowIdx + 1; r < aoa.length; r++) {
-              const row = aoa[r] || [];
-              const match = matchName(row[nameCol]);
-              if (!match) continue;
-              if (!allG[subject][match]) allG[subject][match] = {};
-              gradeCols.forEach(({ idx, key }) => {
-                const v = this._num(row[idx]);
-                if (!isNaN(v) && v >= 0 && v <= 20) {
-                  allG[subject][match][key] = v;
-                  mapped++;
-                }
-              });
+          json.forEach(row => {
+            let name = '';
+            for (const key in row) {
+              if ((key.includes('اسم') || key.includes('إسم')) && typeof row[key] === 'string') { name = row[key].trim(); break; }
             }
-          } else {
-            const json = XLSX.utils.sheet_to_json(ws);
-            const GRADE_KEYS_LABELS = {
-              'الفرض 1':'t1','الفرض 2':'t2','الفرض 3':'t3','الفرض 4':'t4',
-              'فرض 1':'t1','فرض 2':'t2','t1':'t1','t2':'t2','t3':'t3','t4':'t4',
-              'تاريخ ف1':'h1','تاريخ ف2':'h2','جغرافيا ف1':'g1','جغرافيا ف2':'g2',
-              'مدنية ف1':'c1','مدنية ف2':'c2',
-            };
-            json.forEach(row => {
-              let name = '';
-              for (const key in row) {
-                if ((key.includes('اسم') || key.includes('إسم')) && typeof row[key] === 'string') { name = row[key].trim(); break; }
-              }
-              if (!name) {
-                const v = Object.values(row).find(v => typeof v === 'string' && v.trim().split(' ').length >= 2);
-                if (v) name = v.trim();
-              }
-              if (!name) return;
-              const match = matchName(name);
-              if (!match) return;
-              if (!allG[subject][match]) allG[subject][match] = {};
-              let foundByKey = false;
-              for (const key in row) {
-                const gKey = GRADE_KEYS_LABELS[String(key).trim()];
-                if (gKey) {
-                  const v = this._num(row[key]);
-                  if (!isNaN(v) && v >= 0 && v <= 20) { allG[subject][match][gKey] = v; mapped++; foundByKey = true; }
-                }
-              }
-              if (!foundByKey) {
-                for (const key in row) {
-                  const v = this._num(row[key]);
-                  if (!isNaN(v) && v >= 0 && v <= 10) { allG[subject][match]['t1'] = v; mapped++; break; }
-                }
-              }
-            });
-          }
+            if (!name) { const v = Object.values(row).find(v => typeof v === 'string' && v.trim().split(' ').length >= 2); if (v) name = v.trim(); }
+            if (!name) return;
+            const match = matchName(name);
+            if (!match) return;
+            if (!allG[subject][match]) allG[subject][match] = {};
+            let foundByKey = false;
+            for (const key in row) {
+              const gKey = GRADE_KEYS_LABELS[key.trim()];
+              if (gKey) { const v = parseFloat(row[key]); if (!isNaN(v) && v >= 0 && v <= 20) { allG[subject][match][gKey] = v; mapped++; foundByKey = true; } }
+            }
+            if (!foundByKey) {
+              for (const key in row) { const v = parseFloat(row[key]); if (!isNaN(v) && v >= 0 && v <= 10) { allG[subject][match]['t1'] = v; mapped++; break; } }
+            }
+          });
         }
 
         if (mapped > 0) {
           await DB.set('grades', allG);
           UI.renderGrades();
-          const subjLabel = {arabic:'العربية', islamic:'الإسلامية', social:'الاجتماعيات', art:'الفنية', pe:'البدنية'}[subject] || subject;
-          UI.toast(`✅ استيراد ${mapped} قيمة — صيغة: ${fmt} — المادة: ${subjLabel}`, 'success');
+          UI.toast(`✅ استيراد ${mapped} تلميذ — صيغة: ${fmt}`, 'success');
         } else {
+          // تشخيص دقيق لسبب عدم التطابق
           let hint = '';
-          if (importedNames.length) hint = `أول أسماء الملف: ${importedNames.slice(0,3).join(' / ')}`;
-          UI.toast(`⚠️ لم يتم العثور على بيانات قابلة للاستيراد${hint ? ' — ' + hint : ''}`, 'warning');
-          console.warn('[importGrades] no matches', { subject, level: State.level, importedNames: importedNames.slice(0,5), pupils: pupils.slice(0,5) });
+          if (isLivret) {
+            const namesRow = aoa[10] || [];
+            const found = namesRow.slice(4).filter(v => String(v||'').trim().length > 1);
+            hint = `الأسماء في الملف: ${found.slice(0,3).join(' / ')}...`;
+          }
+          UI.toast(`⚠️ لا تطابق في الأسماء${hint ? ' — ' + hint : ''}`, 'warning');
+          console.warn('[importGrades] fmt=', isLivret?'livret':isMassarNuqat?'massar':'generic', 'pupils=', pupils.slice(0,3));
         }
-      } catch(err) {
-        console.error(err);
-        UI.toast('❌ خطأ في قراءة الملف: ' + err.message, 'error');
-      }
+      } catch(err) { console.error(err); UI.toast('❌ خطأ في قراءة الملف: ' + err.message, 'error'); }
     };
     reader.readAsArrayBuffer(file); input.value = '';
   },
 
+  // ── استيراد الغياب من ملف مسار ────────────────────────
   importAbsenceMassar(input) {
     const file = input.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -3809,7 +3691,9 @@ const ImportMgr = {
         const aoa  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
         const isMassarFmt = String(aoa[0]?.[0] || '').includes('سجل الغياب');
+        // بيانات تبدأ من السطر 5 (index=4) في صيغة مسار، أو 1 في صيغة عادية
         const startRow = isMassarFmt ? 5 : 1;
+        // أعمدة: م(0) رقم(1) الاسم(2) التاريخ(3) الحالة(4) مبرر(5) السبب(6) عدد(7)
         const pupils = PupilMgr.getPupilNames();
         const allAtt = await DB.get('attendance');
         let mapped = 0;
@@ -3820,8 +3704,9 @@ const ImportMgr = {
           const date   = String(row[3] || '').trim();
           const status = String(row[4] || '').trim();
           if (!name || !date || date === '—') continue;
-          const match = pupils.find(p => this._sameName(p, name));
+          const match = pupils.find(p => p === name || p.includes(name) || name.includes(p));
           if (!match) continue;
+          // تحويل الحالة
           let attVal = 'absent';
           if (status === 'متأخر' || status === 'late') attVal = 'late';
           else if (status === 'حاضر' || status === 'present') attVal = 'present';
@@ -3837,10 +3722,7 @@ const ImportMgr = {
         } else {
           UI.toast('⚠️ لا سجلات مطابقة في الملف', 'warning');
         }
-      } catch(err) {
-        console.error(err);
-        UI.toast('❌ خطأ في القراءة', 'error');
-      }
+      } catch(err) { console.error(err); UI.toast('❌ خطأ في القراءة', 'error'); }
     };
     reader.readAsArrayBuffer(file); input.value = '';
   }
