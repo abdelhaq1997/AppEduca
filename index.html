@@ -2634,7 +2634,8 @@ const SyncMgr = {
       }
       if (!remote && hasLocal) {
         const activeUserId = await Store.getSystem('active_user_id', '');
-        if (activeUserId && user?.id && activeUserId === user.id) {
+        const currentUser = await this._getUser();
+        if (activeUserId && currentUser?.id && activeUserId === currentUser.id) {
           await this.flushQueue('bootstrap-push');
           this._bootstrapped = true;
           return 'pushed';
@@ -3331,31 +3332,13 @@ const DB = {
 const PupilMgr = {
   async init() {
     PUPILS = await Store.get('pupils', null);
-    if (!PUPILS || !PUPILS['6'] || PUPILS['6'].length === 0) {
-      PUPILS = {
-        "6": [
-          {id:uuid(),name:"ايت المعطي محمد"},{id:uuid(),name:"ايت علي اسالم زينب"},
-          {id:uuid(),name:"كاوي هاجر"},{id:uuid(),name:"ايت القاضي عزيزة"},
-          {id:uuid(),name:"صميري رضوان"},{id:uuid(),name:"كحيل يوسف"},
-          {id:uuid(),name:"اصباحي سامية"},{id:uuid(),name:"علو زكرياء"},
-          {id:uuid(),name:"جركوك هشام"}
-        ],
-        "5": [
-          {id:uuid(),name:"ابوزرار زكرياء"},{id:uuid(),name:"البعمراني سلمى"},
-          {id:uuid(),name:"الفضيلي سليمان"},{id:uuid(),name:"بنحميدة يونس"},
-          {id:uuid(),name:"ادحماد ريان"},{id:uuid(),name:"بنحميدة إلياس"},
-          {id:uuid(),name:"بوريك فاطمة الزهراء"},{id:uuid(),name:"بوزكارن مريم"},
-          {id:uuid(),name:"باحنيني حميد"},{id:uuid(),name:"بنحميدة إيمان"}
-        ],
-        "4": [
-          {id:uuid(),name:"ايت السياس فاطمة الزهراء"},{id:uuid(),name:"ايت سياس عبد الصمد"},
-          {id:uuid(),name:"جركوك فاطمة الزهراء"},{id:uuid(),name:"ادم حداد"},
-          {id:uuid(),name:"صمري عائشة"},{id:uuid(),name:"ايت القاضي ريان"},
-          {id:uuid(),name:"ايت حبان مريم"},{id:uuid(),name:"ايت علي أسالم فدوى"},
-          {id:uuid(),name:"الفيوني زكرياء"},{id:uuid(),name:"اد عثمان عمران"},
-          {id:uuid(),name:"الصوصي أنور"},{id:uuid(),name:"الناصري توفيق"}
-        ]
-      };
+    if (!PUPILS || typeof PUPILS !== 'object') {
+      PUPILS = { "4": [], "5": [], "6": [] };
+      await this.save();
+    } else {
+      PUPILS["4"] = Array.isArray(PUPILS["4"]) ? PUPILS["4"] : [];
+      PUPILS["5"] = Array.isArray(PUPILS["5"]) ? PUPILS["5"] : [];
+      PUPILS["6"] = Array.isArray(PUPILS["6"]) ? PUPILS["6"] : [];
       await this.save();
     }
     for (const lvl of Object.keys(PUPILS)) {
@@ -3821,16 +3804,7 @@ const LegacyMigrator = {
     return result;
   },
   async seedIfEmpty() {
-    const libKey = `${State.year}_library_L${State.level}`;
-    const existing = await Store.get(libKey, []);
-    if (existing.length > 0) return;
-    const pupils = PupilMgr.getPupilNames();
-    if (!pupils.length) return;
-    const seed = [
-      { id: uuid(), student: pupils[0], book: '«الذئب الثري»', date: '2026-02-25', returnDate: '2026-03-05', status: 'returned' },
-      { id: uuid(), student: pupils[1] || pupils[0], book: '«ابن بطوطة يحكي»', date: '2026-02-25', returnDate: '2026-03-05', status: 'returned' }
-    ];
-    await Store.set(libKey, seed);
+    return;
   }
 };
 
