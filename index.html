@@ -2597,9 +2597,15 @@ const SyncMgr = {
         return 'pulled';
       }
       if (!remote && hasLocal) {
-        await this.flushQueue('bootstrap-push');
+        const activeUserId = await Store.getSystem('active_user_id', '');
+        if (activeUserId && user?.id && activeUserId === user.id) {
+          await this.flushQueue('bootstrap-push');
+          this._bootstrapped = true;
+          return 'pushed';
+        }
+        this._showSyncBadge('🆕 هذا الحساب لا يملك نسخة سحابية بعد — يبدأ ببيانات فارغة', 'info');
         this._bootstrapped = true;
-        return 'pushed';
+        return 'blank';
       }
       this._bootstrapped = true;
       this._showSyncBadge(remote ? '✅ البيانات متزامنة' : '☁️ لا توجد نسخة سحابية بعد', 'info');
@@ -2816,7 +2822,22 @@ const AuthMgr = {
     }
   },
 
+  async ensureUserScope() {
+    if (!this.user?.id) return;
+    const activeUserId = await Store.getSystem('active_user_id', '');
+    if (activeUserId && activeUserId !== this.user.id) {
+      await Store.clear({ keepSystem: true, remote: true });
+      await Store.removeSystem('last_remote_at');
+      await Store.removeSystem('last_sync_reason');
+      await Store.removeSystem('cloud_pending');
+      sessionStorage.removeItem('auth_ok');
+    }
+    await Store.setSystem('active_user_id', this.user.id);
+    await Store.setSystem('active_user_email', this.user.email || '');
+  },
+
   async ensureAppReady() {
+    await this.ensureUserScope();
     this.showApp();
     this.renderIdentity();
     if (!this._appReady) {
@@ -2937,6 +2958,12 @@ const AuthMgr = {
     try {
       if (window.SyncMgr) await SyncMgr.flushQueue('logout');
       await window.__SB_AUTH__.signOut();
+      await Store.clear({ keepSystem: true, remote: true });
+      await Store.removeSystem('active_user_id');
+      await Store.removeSystem('active_user_email');
+      await Store.removeSystem('last_remote_at');
+      await Store.removeSystem('last_sync_reason');
+      await Store.removeSystem('cloud_pending');
     } catch (e) {
       console.error('Auth logout', e);
     } finally {
@@ -7006,6 +7033,12 @@ setTimeout(updateMobileShell, 300);
         try {
           if (event === 'SIGNED_OUT') {
             sessionStorage.removeItem('auth_ok');
+            Store.clear({ keepSystem: true, remote: true }).catch(()=>{});
+            Store.removeSystem('active_user_id').catch(()=>{});
+            Store.removeSystem('active_user_email').catch(()=>{});
+            Store.removeSystem('last_remote_at').catch(()=>{});
+            Store.removeSystem('last_sync_reason').catch(()=>{});
+            Store.removeSystem('cloud_pending').catch(()=>{});
           }
           if (event === 'SIGNED_IN' && session?.user) {
             sessionStorage.setItem('auth_ok', '1');
