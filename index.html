@@ -2757,17 +2757,6 @@ function uuid() { return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxx
 // ══════════════════════════════════════════════════════════
 //  AUTH MODULE
 // ══════════════════════════════════════════════════════════
-
-window.SB = window.SB || null;
-async function ensureSBReady(maxWaitMs = 8000){
-  const start = Date.now();
-  while (Date.now() - start < maxWaitMs) {
-    if (window.SB && typeof window.SB.signIn === "function") return window.SB;
-    await new Promise(r => setTimeout(r, 100));
-  }
-  throw new Error('تعذر تهيئة نظام تسجيل الدخول. حدّث الصفحة ثم جرّب مرة أخرى.');
-}
-
 const AuthMgr = {
   user: null,
   _appReady: false,
@@ -2858,20 +2847,25 @@ const AuthMgr = {
   async boot() {
     this.showLogin();
     this.setLoginStatus('');
+    if (!window.SB) {
+      this.setLoginStatus('مكتبة Supabase غير جاهزة', 'error');
+      return;
+    }
     try {
-      const SB = await ensureSBReady();
-      const session = await SB.getSession();
+      window.SB.getClient();
+      const session = await window.SB.getSession();
       if (session?.user && sessionStorage.getItem('auth_locked') !== '1') {
         this.user = session.user;
         sessionStorage.setItem('auth_ok', '1');
         await this.ensureAppReady();
-      } else {
-        this.showLogin();
+        return;
       }
+      this.showLogin();
+      this.setLoginStatus('');
     } catch (e) {
       console.error('Auth boot', e);
-      this.setLoginStatus('تعذر استعادة الجلسة', 'error');
       this.showLogin();
+      this.setLoginStatus('');
     }
   },
 
@@ -2885,8 +2879,7 @@ const AuthMgr = {
     this.setLoginBusy(true);
     this.setLoginStatus('جارٍ تسجيل الدخول...');
     try {
-      const SB = await ensureSBReady();
-      const { user } = await SB.signIn(email, password);
+      const { user } = await window.SB.signIn(email, password);
       this.user = user;
       sessionStorage.removeItem('auth_locked');
       sessionStorage.setItem('auth_ok', '1');
@@ -6980,7 +6973,7 @@ setTimeout(updateMobileShell, 300);
   <div id="sbCloudStatus">جاهز.</div>
   <div class="muted">بعد تسجيل الدخول اضغط رفع لحفظ بيانات هذا الجهاز في Supabase، واضغط استرجاع على جهاز آخر لاستعادة نفس البيانات.</div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   const SUPABASE_URL = 'https://doxaczzvjucxxjovgivv.supabase.co';
@@ -6989,25 +6982,39 @@ setTimeout(updateMobileShell, 300);
 
   window.SB = {
     client: null,
-    async waitForLib(maxWaitMs = 8000){
-      const start = Date.now();
-      while (Date.now() - start < maxWaitMs) {
-        if (window.supabase && typeof window.supabase.createClient === 'function') return true;
-        await new Promise(r => setTimeout(r, 100));
-      }
-      throw new Error('لم يتم تحميل مكتبة Supabase');
-    },
-    async getClient(){
+    getClient(){
       if (this.client) return this.client;
-      await this.waitForLib();
-      this.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (!window.supabase || !window.supabase.createClient) throw new Error('لم يتم تحميل مكتبة Supabase');
+      this.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storageKey: 'appeduca-sb-auth',
+          storage: window.localStorage
+        }
+      });
+      if (!this._authListenerBound) {
+        this.client.auth.onAuthStateChange((event, session) => {
+          try {
+            if (event === 'SIGNED_OUT') {
+              sessionStorage.removeItem('auth_ok');
+              if (sessionStorage.getItem('auth_locked') !== '1') sessionStorage.removeItem('auth_locked');
+            }
+            if (event === 'SIGNED_IN' && session?.user) {
+              sessionStorage.setItem('auth_ok', '1');
+            }
+          } catch (_) {}
+        });
+        this._authListenerBound = true;
+      }
       return this.client;
     },
     async getSession(){
-      const client = await this.getClient();
+      const client = this.getClient();
       const { data, error } = await client.auth.getSession();
       if (error) throw error;
-      return data.session || null;
+      return data?.session || null;
     },
     async getUser(){
       const session = await this.getSession();
@@ -7015,30 +7022,30 @@ setTimeout(updateMobileShell, 300);
     },
     async ensureProfile(user){
       if (!user) return;
-      const client = await this.getClient();
+      const client = this.getClient();
       await client.from('profiles').upsert({ id: user.id, email: user.email || '' }, { onConflict: 'id' });
     },
     async signIn(email, password){
-      const client = await this.getClient();
+      const client = this.getClient();
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw error;
       await this.ensureProfile(data.user);
       return data;
     },
     async signUp(email, password){
-      const client = await this.getClient();
+      const client = this.getClient();
       const { data, error } = await client.auth.signUp({ email, password });
       if (error) throw error;
       if (data?.user) await this.ensureProfile(data.user);
       return data;
     },
     async signOut(){
-      const client = await this.getClient();
+      const client = this.getClient();
       const { error } = await client.auth.signOut();
       if (error) throw error;
     },
     async updatePassword(password){
-      const client = await this.getClient();
+      const client = this.getClient();
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     }
@@ -7056,8 +7063,7 @@ setTimeout(updateMobileShell, 300);
     try {
       setBusy(['sbSignIn','sbSignUp'], true); status('جارٍ تسجيل الدخول...');
       const email = $('sbEmail').value.trim(); const password = $('sbPassword').value;
-      const SB = await ensureSBReady();
-      await SB.signIn(email, password);
+      await window.SB.signIn(email, password);
       status('تم تسجيل الدخول.');
       if ($('login-email') && !$('login-email').value) $('login-email').value = email;
       if ($('login-pass') && !$('login-pass').value) $('login-pass').value = password;
@@ -7069,8 +7075,7 @@ setTimeout(updateMobileShell, 300);
     try {
       setBusy(['sbSignIn','sbSignUp'], true); status('جارٍ إنشاء الحساب...');
       const email = $('sbEmail').value.trim(); const password = $('sbPassword').value;
-      const SB = await ensureSBReady();
-      const res = await SB.signUp(email, password);
+      const res = await window.SB.signUp(email, password);
       status(res?.session ? 'تم إنشاء الحساب وتسجيل الدخول.' : 'تم إنشاء الحساب. راجع بريدك إن كان التأكيد مفعلاً.');
     } catch(e){ status(e.message || 'فشل إنشاء الحساب', true); }
     finally{ setBusy(['sbSignIn','sbSignUp'], false); }
@@ -7117,7 +7122,7 @@ setTimeout(updateMobileShell, 300);
     $('sbPull')?.addEventListener('click', pullCloud);
     $('sbTest')?.addEventListener('click', testConnection);
     $('sbSignOut')?.addEventListener('click', signOut);
-    window.SB.waitForLib().then(()=>window.SB.getClient()).catch(e=>status(e.message || 'تعذر تهيئة Supabase', true));
+    try { window.SB.getClient(); status('جاهز للاتصال.'); } catch (e) { status(e.message || 'تعذر تهيئة Supabase', true); }
   });
 </script>
 
